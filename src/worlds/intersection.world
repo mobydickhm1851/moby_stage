@@ -14,11 +14,19 @@ window
 floorplan
 (
 	bitmap "bitmaps/intersection.png"
-	size [15 15 0.5]
+	size [20 20 0.5]
 )
 
 obstacle
 (
-	color "gray"
-	pose [0 0 0 0]
+	name "obs_1"
+	pose [-6 -1.5 0.0 0.0]
+	color "red"
+)
+
+obstacle
+(
+	name "obs_2"
+	pose [6 1.5 0 0]
+	color "yellow"
 )
