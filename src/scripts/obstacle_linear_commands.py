@@ -32,6 +32,7 @@ obs_vel = [3.0, -3.0]
 # default obs0 --> (1); obs1 <-- (-1)
 obs_dir = [1, -1] 
 obs_xpose = [0.0, 0.0]
+go = True
 
 # this is return the keyboard input
 def getKey():
@@ -63,17 +64,21 @@ def endpoint_check(xpose):
 	    if obs_dir[i] > 0:
 		if xpose[i] > endpoint[1]:
 		    obs_dir[i] = -obs_dir[i]
-		else: pass
+		    return True
+		else: 
+		    return False
 
 	    elif obs_dir[i] < 0:
 		if xpose[i] < endpoint[0]:
 		    obs_dir[i] = -obs_dir[i]
-		else: pass
+		    return True
+		else: 
+		    return False
 
 # Set obastacles' velocity
 def set_obs_vel():
    
-    global diff, speed, obs_dir
+    global diff, speed, obs_dir, go
 
     pub_obs0_vel = rospy.Publisher('/obs0/cmd_vel', Twist, queue_size=5)
     sub_obs0_odom = rospy.Subscriber('/obs0/odom', Odometry, get_obs0_odom)
@@ -93,23 +98,28 @@ def set_obs_vel():
 	    elif key == 'a':
 		speed == speed * 0.8
 	    # ctrl+c will return '\x03'
+	    elif key == 'c': # continue
+		go = True
+	    elif key == 'p': # pause
+		go = False
 	    elif key == '\x03':
 		break
-	finally:
-	    rospy.loginfo(obs_xpose)
-	    rospy.loginfo(obs_dir)
-	    rospy.loginfo(obs_vel)
 
-	    endpoint_check(obs_xpose) 
-	    for i in range(len(obs_vel)):
+	finally:
+ 	    for i in range(len(obs_vel)):
 	        obs_vel[i] = abs(obs_vel[i])*obs_dir[i]	
-		
-            twist0 = Twist()
-            twist0.linear.x = obs_vel[0]; twist0.linear.y = 0; twist0.linear.z = 0
-            twist0.angular.x = 0; twist0.angular.y = 0; twist0.angular.z = 0
-	    #rospy.loginfo(str)  #write to screen, node's log file and rosout
-#            rospy.loginfo(pose_y)
-            pub_obs0_vel.publish(twist0)
+	        twist0 = Twist()
+                twist0.linear.x = obs_vel[0]; twist0.linear.y = 0; twist0.linear.z = 0
+                twist0.angular.x = 0; twist0.angular.y = 0; twist0.angular.z = 0
+
+	    if endpoint_check(obs_xpose):
+		go = False
+
+	    if go:  
+                pub_obs0_vel.publish(twist0)
+
+	    else:
+		pass
 
             rate.sleep()
 #	    rospy.loginfo("count: %d",count)
