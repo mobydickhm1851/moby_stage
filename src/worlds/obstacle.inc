@@ -21,7 +21,10 @@ define obstacle position
 	
 	#positional things
 	drive "diff"
+	localization "odom"
 	ranger_return 1.0
-        velocity_bounds [-3 3 -1 1 -1 1 -90 90 ]
+        velocity_bounds [-5 5 -1 1 -1 1 -90 90 ]
+	
+	update_interval 100
 )
 

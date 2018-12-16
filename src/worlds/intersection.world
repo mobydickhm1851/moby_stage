@@ -1,5 +1,6 @@
 include "map.inc"
 include "obstacle.inc"
+include "solabot.inc"
 
 size [15 15]
 
@@ -7,7 +8,7 @@ size [15 15]
 window
 (
 	size [700.00 700.00]
-	scale 35
+	scale 30
 )
 
 # load and environment bitmap
@@ -29,4 +30,11 @@ obstacle
 	name "obs_2"
 	pose [6 1.5 0 0]
 	color "yellow"
+)
+
+solabot
+(
+	name "the solabot"
+	pose [0 -8 0 0 ]
+	color "blue"
 )

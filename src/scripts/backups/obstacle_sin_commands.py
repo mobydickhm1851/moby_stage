@@ -65,11 +65,11 @@ def set_y_pose():
 	    if key == 'f':
 	        diff = diff + 0.5
 	    elif key == 'd':
-		diff == diff - 0.5
+		diff = diff - 0.5
 	    elif key == 's':
-		speed == 1.2 * speed
+		speed = 1.2 * speed
 	    elif key == 'a':
-		speed == speed * 0.8
+		speed = speed * 0.8
 	    # ctrl+c will return '\x03'
 	    elif key == '\x03':
 		break

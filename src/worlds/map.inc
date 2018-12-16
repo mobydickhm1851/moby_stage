@@ -1,6 +1,5 @@
 # map.inc - useful setup for a floorplan bitmap
-# Authors: Richard Vaughan
-# $Id$
+# Authors: Richard Vaughan Modified by LiuYC 2018
 
 define floorplan model
 (
@@ -17,7 +16,8 @@ define floorplan model
   gripper_return 0
   fiducial_return 0
   ranger_return 1
-
+  map_resolution 0.1
+  update_interval 100
   obstacle_return 1
 )
 

@@ -1,16 +1,36 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="world_file" default="$(find moby_stage)/worlds/intersection.world"/>
+  <arg name="name0" default="obs0" />
+  <arg name="name1" default="obs1" />
   <param name="/use_sim_time" value="true"/>
 
   <!--  ================ Stage ================  -->
   <node pkg="stage_ros" type="stageros" name="stageros" args="$(arg world_file)">
     <param name="base_watchdog_timeout" value="0.5"/>
-    <remap from="odom" to="odom"/>
-    <remap from="base_pose_ground_truth" to="base_pose_ground_truth"/>
-    <remap from="/robot_0/cmd_vel" to="obs0/cmd_vel"/>
-    <remap from="/robot_1/cmd_vel" to="obs1/cmd_vel"/>
-    <remap from="/robot_0/odom" to="obs0/odom"/>
-    <remap from="/robot_1/odom" to="obs1/odom"/>
+    <remap from="/robot_0/cmd_vel" to="/$(arg name0)/cmd_vel"/>
+    <remap from="/robot_1/cmd_vel" to="/$(arg name1)/cmd_vel"/>
+    <remap from="/robot_2/cmd_vel" to="/car/cmd_vel"/>
+    <remap from="/robot_0/odom" to="$(arg name0)/odom"/>
+    <remap from="/robot_1/odom" to="$(arg name1)/odom"/>
+    <remap from="/robot_0/base_pose_ground_truth" to="/$(arg name0)/base_pose_ground_truth"/>
+    <remap from="/robot_1/base_pose_ground_truth" to="/$(arg name1)/base_pose_ground_truth"/>
+    <remap from="/robot_2/base_pose_ground_truth" to="/car/base_pose_ground_truth"/>
   </node>
+
+  <!-- ============= Motion of Obstacles ============ -->
+<!--
+  <node name="obstacle_command_0" type="obstacle_linear_commands.py" pkg="moby_stage" >
+    <param name="obs_name" type="string" value="$(arg name0)" />
+    <param name="init_vel" type="double" value="2.0" />
+  </node>
+  <node name="obstacle_command_1" type="obstacle_linear_commands.py" pkg="moby_stage" >
+    <param name="obs_name" type="string" value="$(arg name1)" />
+    <param name="init_vel" type="double" value="1.0" />
+  </node>
+-->
+  <node name="solabot_commands" type="solabot_linear_nav.py" pkg="moby_stage" output="screen">
+    <param name="init_vel" type="double" value="1.0" />
+  </node>
+
 </launch>
