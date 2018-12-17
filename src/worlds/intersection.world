@@ -1,6 +1,7 @@
 include "map.inc"
 include "obstacle.inc"
 include "solabot.inc"
+include "origin.inc"
 
 size [15 15]
 
@@ -38,3 +39,10 @@ solabot
 	pose [0 -8 0 0 ]
 	color "blue"
 )
+
+#origin
+#(
+#	name "the origin"
+#	pose [0 0 0 0 ]
+#	color "green"
+#)

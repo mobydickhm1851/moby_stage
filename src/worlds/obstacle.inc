@@ -1,9 +1,9 @@
 define obstacle position
 (
 	# actual size
-	size [1.25 1 1]
+	size [1 0.866 1]
 	# centre of rotation offset
-	origin [0.125 0 0 0]
+	origin [0 0 0 0]
  	# octagon obstacle	
 
 
