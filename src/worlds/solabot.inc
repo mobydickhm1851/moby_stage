@@ -113,10 +113,10 @@ define solabot position
 	  )
 
 	  #positional things
-	  drive "car"
+	  drive "omni"
 	  localization "odom"
 	  ranger_return 1.0
-          localization "odom"
+     	  update_interval 100
           velocity_bounds [-1 1 -5 5 -1 1 -90 90 ]
 
 	  #sensors attached to solabot

@@ -28,7 +28,7 @@
     <param name="init_vel" type="double" value="1.0" />
   </node>
   <node name="solabot_commands" type="solabot_linear_nav.py" pkg="moby_stage" output="screen">
-    <param name="init_vel" type="double" value="1.0" />
+    <param name="init_vel" type="double" value="0.6" />
   </node>
 
 </launch>
