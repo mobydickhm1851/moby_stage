@@ -21,14 +21,14 @@
   <!-- ============= Motion of Obstacles ============ -->
   <node name="obstacle_command_0" type="obstacle_linear_commands.py" pkg="moby_stage" >
     <param name="obs_name" type="string" value="$(arg name0)" />
-    <param name="init_vel" type="double" value="1.0" />
+    <param name="init_vel" type="double" value="0.5" />
   </node>
   <node name="obstacle_command_1" type="obstacle_linear_commands.py" pkg="moby_stage" >
     <param name="obs_name" type="string" value="$(arg name1)" />
-    <param name="init_vel" type="double" value="1.0" />
+    <param name="init_vel" type="double" value="0.5" />
   </node>
   <node name="solabot_commands" type="solabot_linear_nav.py" pkg="moby_stage" output="screen">
-    <param name="init_vel" type="double" value="0.6" />
+    <param name="init_vel" type="double" value="0.5" />
   </node>
 
 </launch>

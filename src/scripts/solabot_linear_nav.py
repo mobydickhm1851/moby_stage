@@ -5,26 +5,33 @@
 
 import roslib
 import rospy
-from rospy_tutorials.msg import Floats
-from rospy.numpy_msg import numpy_msg
-from std_msgs.msg import Float32
+#from rospy_tutorials.msg import Floats
+#from std_msgs.msg import Float32
+from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
-import sys, select, termios, tty
+#import sys, select, termios, tty
 import numpy as np
-#import time
+# import modult for n-d array
+from nd_msg.numpy_nd_msg import numpy_nd_msg
+import time
+
+
+
 
 # global variables
-costmap = np.array([], dtype=np.float32)
+costmap = np.array(np.random.randn(2,250,250), dtype=np.float32)
+test = np.array(np.ones((2,250,250)), dtype=np.float32)
 # NOTE: make the costmap bigger incase the costmap is out of the bound (line 224)
 # NOTE: the above should be considered as a problem
-map_size = 30   # default, should be replaced when param is imported
+# initiate an array of (n,2) for obs_pose and obs_vel
+obs_list=[]
+obs_pose = []
+obs_vel = []
+map_size = 25   # default, should be replaced when param is imported
 map_res = 0.1
 t_res = 0.1   # prediction array for every 0.1s
-car_vel = 0.5
 car_init_vel = 0.6
-obs_vel = []
-obs_pose = []
 car_vel = np.array([[0.0, 0.0]])
 car_pose = np.array([[0.0, 0.0]])
 car_dim = 1.1   # radius, think of as a circle, NOTE: should be modified
@@ -100,32 +107,13 @@ def get_t_ahead():
 
     else:
 	t_ahead = 0
-	rospy.loginfo("There is no moving object!")
+#	rospy.loginfo("There is no moving object!")
 
     t_ahead = int(np.ceil(t_ahead / t_res))
  
     return t_ahead   # return int
 
 
-
-def reset_costmap():
-    global costmap 
-    # default a square map
-    map_x_num = map_size / map_res
-    map_y_num = map_size / map_res
-    t_lh = get_t_ahead()	    
-    
-    # t_lh is not None and not < 0
-    if t_lh > 0 :        
-	t_lh = np.ceil(t_lh)
-    	costmap = np.zeros((t_lh, map_x_num, map_y_num))     # (t, x, y)array
-        return True
-
-    # if no prediction is needed, generate local costmap
-    else : 
-    	costmap = np.zeros((1, map_x_num, map_y_num))     # (1, x, y)array, local costmap
-        return False
-	
 
 def get_map_origin():
     map_x_num = map_size / map_res
@@ -135,18 +123,6 @@ def get_map_origin():
     origin[1] = int (map_y_num / 2)
     
     return origin  # (2, ) array
-
-
-# change coordination from map to costmap
-def pose_to_costcor(cor_lst):
-    costmap_origin = get_map_origin()
-    cost_cor = np.array([0, 0])
-    # NOTE: using np.ceil to avoid unmatching array when doing round up (line 230)
-    cost_cor[0] = int(np.ceil( costmap_origin[0] + cor_lst[0] / map_res))
-    # NOTE: y increase in  opposite direction
-    cost_cor[1] = int(np.ceil( costmap_origin[1] - cor_lst[1] / map_res))  
-
-    return cost_cor  # (2, ) int array
 
 
 def get_costmap_val( t, row_idx, col_idx):
@@ -164,25 +140,25 @@ def set_costmap_val( t, row_idx, col_idx, set_val):
     
 
 def change_costmap_val( t, row_idx, col_idx, set_val):
-    global costmap
     
     val_old = get_costmap_val(t, row_idx, col_idx)
-    set_val = np.ones((len(row_idx), len(col_idx))) * set_val
 
     # save memory (?)
     if not np.any(val_old):  # if all is zero
 	set_costmap_val(t, row_idx, col_idx, set_val)
-
+    # NOTE only obs, so 'or' is fine
     else:   # should between 0 and 1 (probability)
 	# P(A or B) = P(A) + P(B) - P(A)P(B)
 	set_val = val_old + set_val - val_old * set_val 
 	set_costmap_val(t, row_idx, col_idx, set_val)
-        
+
+
 
 # NOTE: now it's 1-D, set square castmap around obstacle
 def cost_function(dist_to_obs, obs_vel):
-    global front_factor, rear_factor
-   
+ 
+    obs_vel = abs(obs_vel)
+  
     if dist_to_obs >= 0:   # in front of the obstacle
 	val = -(front_factor / obs_vel) * dist_to_obs**2 + 1
 
@@ -206,114 +182,93 @@ def bordercheck(idx):
     else:
 	return False
 
-def update_costmap():
-    global costmap
 
-    if reset_costmap():
-	pass
- 
-    else:    
-	rospy.loginfo("No prediction is needed, turn to local costmap now!")
+# change coordination from map to costmap
+#NOTE: function pose_to_costcore change list value !!!
+def pose_to_costcor(cor_arr):
+    costmap_origin = get_map_origin()
+    cor_arr_ = np.array(cor_arr, dtype=int)
+    # using np.ceil to avoid unmatching array when doing round up (line 230)
+    cor_arr_[:,0] = np.array(np.ceil( costmap_origin[0] + cor_arr_[:,0] / map_res), dtype=int)
+    # y increase in  opposite direction
+    cor_arr_[:,1] = np.array(np.ceil( costmap_origin[1] - cor_arr_[:,1] / map_res), dtype=int)
 
-    # NOTE: not the function of costmap is 1-D (line), should be modified into 2-D (circle)
+    return cor_arr_  # (2, ) int array
+
+
+# ===================================== Update Costmap ===================================== #
+
+def get_obs_cost_pose(t):
+    arr, arr_all = [], []
+
     # range covered by sizeof obs + car (so the car become a point)	
     cost_range_cor = np.around( car_dim + obs_dim, int(abs(np.log10(map_res))))   
     # from map cor to cost cor (index)
     cost_range_index = int(np.ceil(cost_range_cor / map_res))
-#    rospy.loginfo("cost_range:{0}".format(cost_range_index))
-    costmap_origin = get_map_origin()
 
-    #  update castmap in all t within t_ahead 
-    t_ahead = get_t_ahead()
+    # update pose for every t ([0] of costmap)
+    pose = obs_pose + obs_vel * t * t_res
+    upper = pose_to_costcor(pose) + cost_range_index  # bot-right 
+    #NOTE: function pose_to_costcore change list value !!!
+    pose = obs_pose + obs_vel * t * t_res
+    lower = pose_to_costcor(pose) - cost_range_index  # top-left
 
-    if t_ahead > 0:
-	pass
-    else:
-	t_ahead = 1  
+    for obs_num in range(len(upper)):
+	# index: y_min to y_max
+        row_idx = np.array([np.arange(lower[obs_num][1], upper[obs_num][1]+1)]) 
+        # index: x_min to x_max
+        col_idx = np.array([np.arange(lower[obs_num][0], upper[obs_num][0]+1)])
+	arr = np.array([np.append(row_idx, col_idx, 0)])
+
+        if obs_num == 0:
+	    arr_all = arr
+	
+	else:
+	    arr_all = np.append(arr_all, arr, 0)
+
+    return arr_all
+
+
+def reset_costmap(t_lh):
+    global costmap 
+    # default a square map
+    map_x_num = map_size / map_res
+    map_y_num = map_size / map_res
     
-    # NOTE -1 is a quick fix...	
-    for t in range(t_ahead-1):
-	# NOTE: this is linear motion prediction
-        pose = obs_pose + obs_vel * t * t_res
-     	#  for each obstacle
-        for i in range(len(obs_pose)):
-	    # check if the prediction pose of obstacle is out of range
-	    # NOTE: the -1 here is used to prevent out of borders
-	    if np.all(abs(pose[i]) < (map_size / 2 - obs_dim - car_dim - 1)): 
-	        # from map cor to cost cor
-	        upper = pose_to_costcor(pose[i] + cost_range_cor) 
-	        lower = pose_to_costcor(pose[i] - cost_range_cor)  
+    # t_lh is not None and not < 0
+    if t_lh > 0 :        
+    	costmap = np.zeros((t_lh + 1, map_x_num, map_y_num), dtype=np.float32)     # (t, x, y)array
+        return True
 
-	        row_idx = np.arange(upper[1], lower[1]+1)  # index: y_min to y_max
-	        col_idx = np.arange(lower[0], upper[0]+1)  # index: x_min to x_max
+    # if no prediction is needed, generate local costmap
+    else: 
+    	costmap = np.zeros(( 1, map_x_num, map_y_num), dtype=np.float32)      # (1, x, y)array, local costmap
+        return False
+	
 
-		    # location that obstacle at has probability of collision equals to 1
-  	        change_costmap_val( t, row_idx, col_idx, 1)
-#		if t == 0 and i == 0:
-#     	    	    rospy.loginfo("this is center and pose and rwo_idx col_idx: {0}{1}{2}{3}".format(get_map_origin(), pose[0],row_idx,col_idx))
-#		rospy.loginfo("I did change the costmap{0}".format(t))
+def update_costmap():
+    arr_idx = np.array([])
 
-		# NOTE: only x-direction vel is considered ([i][0])
-		if obs_vel[i][0] > 0:
-		    # cost function: in front of the obstacle
-		    # NOTE:5 meters ahead, this should cover the costfunction val that > 0
-		    for j in range(upper[0] + 1, upper[0] + 50):
-		        dist_to_obs = (j-upper[0]) * map_res
-			cost_val = cost_function(dist_to_obs, obs_vel[i][0])
+    # check the costmap around when static
+    t_ah = 0
+    
+    reset_costmap(t_ah)
 
-			# check if the index is out of range
-			if bordercheck(j):
-			    # change the costval row-wise
-			    change_costmap_val( t, row_idx, [j], cost_val)
-#			    rospy.loginfo("mom, i'm here!!!! obs_pose : {0}".format(obs_pose))
-#			    rospy.loginfo("upper[0] and j : {0} {1}".format(upper[0],j))
-			else :
-			    pass
 
-		    # cost function: rear of the obstacle
-		    for k in range(lower[0] - 50, lower[0] - 1):
-		        dist_to_obs = - (lower[0]-k) * map_res
-			cost_val = cost_function(dist_to_obs, obs_vel[i][0])
-			# check if the index is out of range
-			if bordercheck(k):
-			    # change the costval row-wise
-			    change_costmap_val( t, row_idx, [k], cost_val)
-#			    rospy.loginfo("dad, i'm here!!!!!!!!")
-			else:
-			    pass
+    for t in range(t_ah + 1):
 
-		elif obs_vel[i][0] < 0:
-		    for j in range(lower[0] - 50, lower[0] - 1):
-		        dist_to_obs = (lower[0]-j) * map_res
-			cost_val = cost_function(dist_to_obs, obs_vel[i][0])
+	arr_idx = get_obs_cost_pose(t)
+	 
+        for obs_num in range(len(obs_pose)):
+	    change_costmap_val( t, arr_idx[obs_num][0], arr_idx[obs_num][1], 1)
+    
 
-			# check if the index is out of range
-			if bordercheck(j):
-			    # change the costval row-wise
-			    change_costmap_val( t, row_idx, [j], cost_val)
-#			    rospy.loginfo("mom, i'm here!!!! obs_pose : {0}".format(obs_pose))
-			else :
-			    pass
+# ========================================================================================== #
 
-		    # cost function: rear of the obstacle
-		    for k in range(upper[0] + 1, upper[0] + 50):
-		        dist_to_obs = -(k-upper[0]) * map_res
-			cost_val = cost_function(dist_to_obs, obs_vel[i][0])
-			# check if the index is out of range
-			if bordercheck(k):
-			    # change the costval row-wise
-			    change_costmap_val( t, row_idx, [k], cost_val)
-#			    rospy.loginfo("dad, i'm here!!!!!!!!")
-			else:
-			    pass
-
-	    else:
-		pass
-
+# ================================ Navigation ================================= #
 def get_col_prob(t, cor_lst):
     idx = pose_to_costcor(cor_lst)
     col_prob = costmap[t][idx[0]][idx[1]]
-
     return col_prob
 
 
@@ -322,38 +277,12 @@ def col_prob_diff(cor, t1, t2):
     pass    
 
 
-
-
-'''
-import matplotlib.pyplot as plt
-
-plt.ion()
-plt.figure()
-plt.rcParams["figure.figsize"] = [100,100]
-
-# input is a (x_num, y_num) array
-def plot_array(arr):
-
-    x = np.arange( arr.shape[0])
-    y = np.arange( arr.shape[1])
-
-    for i in range(len(x)):
-        x_plt = np.ones((1,len(x))) * i
-        y_plt = y
-        # values of arr should be from 0 to 1
-        z = np.transpose(arr)[i]
-        # grey scale of 'binary', 1 is black, 0 is white
-        plt.scatter(x_plt, y_plt, c = z, s = 1, alpha = 0.5, cmap='binary') 
-'''	    
-
+# ============================================================================ #
 
 def main():
-    global obs_pose, obs_vel
+    global obs_pose, obs_vel, costmap
 
     obs_list = ['obs0', 'obs1']
-
-
-    # initiate an array of (n,2) for obs_pose and obs_vel
     obs_pose = np.zeros((len(obs_list), 2))
     obs_vel = np.zeros((len(obs_list), 2))
 
@@ -363,13 +292,14 @@ def main():
     map_res = rospy.get_param('~cmap_res', 0.1) # default is 1.0
     map_size = rospy.get_param('~cmap_size', 20) # default is 1.0
     # publish as numpy array using numpy_msg
-    pub_costmap = rospy.Publisher('/costmap', numpy_msg(Floats), queue_size=200)
+    pub_costmap = rospy.Publisher('/costmap', numpy_nd_msg(Float32MultiArray))
     # data of the "car" 
     pub_car_vel = rospy.Publisher('/car/cmd_vel', Twist, queue_size=5)
     rospy.Subscriber('/car/base_pose_ground_truth', Odometry, update_car_odom)
     # data of the "obstacles"
     for i in range(len(obs_list)):
 	rospy.Subscriber('/{0}/base_pose_ground_truth'.format(obs_list[i]), Odometry, update_obs_odom,(i))
+
 
     rate = rospy.Rate(20) # default is 100
     while not rospy.is_shutdown():
@@ -380,29 +310,27 @@ def main():
 	    t_lh = 0.0
 	    t_lh = get_t_ahead()	    
 
-	    # slow down or accelerate
             update_costmap()
-	    prob = get_col_prob(0, car_pose[0]+2)
+    	    pub_costmap.publish(data = costmap)
+	    
+	    
+	    '''
+	    lh_dist = 2   # look ahead distance
 
-	    if prob != 0.0:
+	    # NOTE NOTE NOTE quick fix, i'm cheating
+	    lh_pose = car_pose[0] + [0, lh_dist]
+	    prob = get_col_prob(0, lh_pose)
+
+	    prob_thresh = 0.6  # smaller the thresh, more careful the driver is	    
+	               
+	    if prob != 0: 
+	        rospy.loginfo("now the col-prob {0}m ahead is:{1}. pose and pose transformed are {2}, {3}".format(lh_dist, prob, lh_pose, pose_to_costcor(lh_pose)))
+
+            if prob > prob_thresh:
 	        car_vel = 0
-
 	    else:
-		car_vel = car_init_vel
-	    rospy.loginfo("collision probability 5m ahead :{0} ".format(prob))
-
-
-
-
-
-# publicated data is not right
-#		pub_costmap.publish(costmap[0])
-
-# visualization, not finished
-#    		plot_array(costmap[0])
-#    		plt.draw()
-#    		plt.pause(0.01)
-#		plt.clf()
+		pass
+	    '''
 
 #	    else:
 		# keep moving
