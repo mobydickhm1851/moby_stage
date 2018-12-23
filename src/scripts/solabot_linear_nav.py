@@ -21,7 +21,6 @@ import time
 
 # global variables
 costmap = np.array(np.random.randn(2,250,250), dtype=np.float32)
-test = np.array(np.ones((2,250,250)), dtype=np.float32)
 # NOTE: make the costmap bigger incase the costmap is out of the bound (line 224)
 # NOTE: the above should be considered as a problem
 # initiate an array of (n,2) for obs_pose and obs_vel
@@ -135,7 +134,6 @@ def get_costmap_val( t, row_idx, col_idx):
 # input should be a (N, ) array
 def set_costmap_val( t, row_idx, col_idx, set_val):
     global costmap
-    
     costmap[t][row_idx[:, None], col_idx] = np.ones((len(row_idx), len(col_idx))) * set_val
     
 
@@ -184,19 +182,21 @@ def bordercheck(idx):
 
 
 # change coordination from map to costmap
-#NOTE: function pose_to_costcore change list value !!!
+# NOTE: function pose_to_costcore change list value !!!
+# NOTE: INPUT has to be array!
 def pose_to_costcor(cor_arr):
     costmap_origin = get_map_origin()
     cor_arr_ = np.array(cor_arr, dtype=int)
+
     # using np.ceil to avoid unmatching array when doing round up (line 230)
-    cor_arr_[:,0] = np.array(np.ceil( costmap_origin[0] + cor_arr_[:,0] / map_res), dtype=int)
+    cor_arr_[:,0] = np.array(np.ceil( costmap_origin[0] + cor_arr[:,0] / map_res), dtype=int)
     # y increase in  opposite direction
-    cor_arr_[:,1] = np.array(np.ceil( costmap_origin[1] - cor_arr_[:,1] / map_res), dtype=int)
+    cor_arr_[:,1] = np.array(np.ceil( costmap_origin[1] - cor_arr[:,1] / map_res), dtype=int)
 
     return cor_arr_  # (2, ) int array
 
 
-# ===================================== Update Costmap ===================================== #
+# ======================================== Update Costmap ======================================== #
 
 def get_obs_cost_pose(t):
     arr, arr_all = [], []
@@ -237,12 +237,14 @@ def reset_costmap(t_lh):
     
     # t_lh is not None and not < 0
     if t_lh > 0 :        
-    	costmap = np.zeros((t_lh + 1, map_x_num, map_y_num), dtype=np.float32)     # (t, x, y)array
+	# (t, x, y)array
+    	costmap = np.zeros((t_lh + 1, map_x_num, map_y_num), dtype=np.float32)     
         return True
 
     # if no prediction is needed, generate local costmap
     else: 
-    	costmap = np.zeros(( 1, map_x_num, map_y_num), dtype=np.float32)      # (1, x, y)array, local costmap
+	# (1, x, y)array, local costmap
+    	costmap = np.zeros(( 1, map_x_num, map_y_num), dtype=np.float32)      
         return False
 	
 
@@ -250,25 +252,83 @@ def update_costmap():
     arr_idx = np.array([])
 
     # check the costmap around when static
-    t_ah = 0
-    
+#    t_ah = get_t_ahead()
+    t_ah = 1
+
     reset_costmap(t_ah)
 
-
     for t in range(t_ah + 1):
-
-	arr_idx = get_obs_cost_pose(t)
+	     
+	# Check if any obstacle will be out of range for some t in the prediction
+	# NOTE: the -1 here is used to prevent out of borders
+       	#pose = obs_pose + obs_vel * t * t_res
+ 	#if np.all(abs(pose) < (map_size / 2 - obs_dim - car_dim - 1)): 
+	    
+	
+	    arr_idx = get_obs_cost_pose(t)
 	 
-        for obs_num in range(len(obs_pose)):
-	    change_costmap_val( t, arr_idx[obs_num][0], arr_idx[obs_num][1], 1)
-    
+            for obs_num in range(len(obs_pose)):
+	    
+	    	# Probability of collision is 1 for where the obstacle is (obs_dim + car+dim) 
+	    	change_costmap_val( t, arr_idx[obs_num][0], arr_idx[obs_num][1], 1)
 
-# ========================================================================================== #
+		# check if prediction is needed
+		# NOTE: only x-direction is considered
+		#if np.all([obs_vel[obs_num][0]]):
+		if t_ah > 0:
+
+ 	    	# Create Collision Probability in front and rear of obstacles
+	    	# NOTE: Consider x-vel only ([0]), should be on the direction of the vel-Vector
+	    
+    	            # where the cost function = 0
+	    	    max_front = int(np.ceil(np.sqrt(abs(obs_vel[obs_num][0]) / front_factor) / map_res))
+	    	    max_rear = int(np.ceil(np.sqrt(abs(obs_vel[obs_num][0]) / rear_factor) / map_res))
+
+	  	    # The right and left index
+	 	    r_idx = arr_idx[obs_num][1][-1]  # upper x
+		    l_idx = arr_idx[obs_num][1][0]   # lower x
+	    
+	   	    # Velocity direction check, 1 if > 0 ; -1 if < 0 
+	            v_check = abs(obs_vel[obs_num][0]) / obs_vel[obs_num][0]
+
+	            # For cells on the RIGHT of the obstacle
+	            # (vel > 0 : FRONT; vel < 0 : REAR)	
+   	            for r_cell in range(r_idx, r_idx + max_front + 1):
+		
+		    	dist_to_obs = (r_cell - r_idx) * map_res * v_check
+		    	cost_val = cost_function(dist_to_obs, obs_vel[obs_num][0])
+
+		    	# check if the index is out of range
+		    	if bordercheck(r_cell):
+		            # change the costval col-wise
+		            change_costmap_val( t, arr_idx[obs_num][0], [r_cell], cost_val)
+		    	else :
+		            break
+
+	            # For cells on the LEFT of the obstacle
+	            # (vel > 0 : REAR; vel < 0 : FRONT)	
+		    # NOTE: range of max_front can cover max_rear, the other way is not working
+	            for l_cell in range(l_idx - max_front, l_idx + 1 ):
+		
+	            	dist_to_obs = (l_cell - l_idx) * map_res * v_check
+		    	cost_val = cost_function(dist_to_obs, obs_vel[obs_num][0])
+
+		    	# check if the index is out of range
+		    	if bordercheck(l_cell):
+		            # change the costval col-wise
+		            change_costmap_val( t, arr_idx[obs_num][0], [l_cell], cost_val)
+		    	else :
+		            pass
+	    else:
+		break
+
+
+# ================================================================================================ #
 
 # ================================ Navigation ================================= #
 def get_col_prob(t, cor_lst):
     idx = pose_to_costcor(cor_lst)
-    col_prob = costmap[t][idx[0]][idx[1]]
+    col_prob = costmap[t][idx[0][1]][idx[0][0]]
     return col_prob
 
 
@@ -280,19 +340,18 @@ def col_prob_diff(cor, t1, t2):
 # ============================================================================ #
 
 def main():
-    global obs_pose, obs_vel, costmap
+    global obs_pose, obs_vel, costmap, map_size, map_res
 
     obs_list = ['obs0', 'obs1']
     obs_pose = np.zeros((len(obs_list), 2))
     obs_vel = np.zeros((len(obs_list), 2))
 
     rospy.init_node('solabot_commands', anonymous=True)	
-
-    car_vel = rospy.get_param('~init_vel', car_init_vel) # default is 1.0
+    car_vel[0][1] = rospy.get_param('~init_vel', car_init_vel) # default is 1.0
     map_res = rospy.get_param('~cmap_res', 0.1) # default is 1.0
-    map_size = rospy.get_param('~cmap_size', 20) # default is 1.0
+    map_size = rospy.get_param('~cmap_size', 25) # default is 25
     # publish as numpy array using numpy_msg
-    pub_costmap = rospy.Publisher('/costmap', numpy_nd_msg(Float32MultiArray))
+    pub_costmap = rospy.Publisher('/costmap', numpy_nd_msg(Float32MultiArray), queue_size=5)
     # data of the "car" 
     pub_car_vel = rospy.Publisher('/car/cmd_vel', Twist, queue_size=5)
     rospy.Subscriber('/car/base_pose_ground_truth', Odometry, update_car_odom)
@@ -313,32 +372,31 @@ def main():
             update_costmap()
     	    pub_costmap.publish(data = costmap)
 	    
+	    car_vel[0][1] = 0
 	    
-	    '''
 	    lh_dist = 2   # look ahead distance
 
-	    # NOTE NOTE NOTE quick fix, i'm cheating
 	    lh_pose = car_pose[0] + [0, lh_dist]
-	    prob = get_col_prob(0, lh_pose)
+	    prob = get_col_prob(0, np.array([lh_pose]))
 
 	    prob_thresh = 0.6  # smaller the thresh, more careful the driver is	    
 	               
 	    if prob != 0: 
-	        rospy.loginfo("now the col-prob {0}m ahead is:{1}. pose and pose transformed are {2}, {3}".format(lh_dist, prob, lh_pose, pose_to_costcor(lh_pose)))
+	        rospy.loginfo("now the col-prob {0}m ahead is:{1}. pose and pose transformed are {2}, {3}".format(lh_dist, prob, lh_pose, pose_to_costcor(np.array([lh_pose]))))
 
+	    '''
             if prob > prob_thresh:
 	        car_vel = 0
 	    else:
 		pass
+
+	    else:
+		# keep moving
+		pass	
 	    '''
 
-#	    else:
-		# keep moving
-#		pass	
-
-
             twist = Twist()
-       	    twist.linear.x = 0; twist.linear.y = car_vel; twist.linear.z = 0
+       	    twist.linear.x = 0; twist.linear.y = car_vel[0][1]; twist.linear.z = 0
             twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = 0
 
 	    if True:  
