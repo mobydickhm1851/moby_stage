@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from std_msgs.msg import Float32MultiArray
 # import modult for n-d array
-from nd_msg.numpy_nd_msg import numpy_nd_msg
+from costmap_module.numpy_nd_msg import numpy_nd_msg
 from matplotlib.figure import figaspect
 
 
