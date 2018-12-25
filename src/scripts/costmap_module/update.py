@@ -86,7 +86,6 @@ def update_car_odom(msg):
     pose_x = msg.pose.pose.position.x
     pose_y = msg.pose.pose.position.y
     car_pose[0] = np.array([[pose_x, pose_y]]) 
-#    rospy.loginfo(car_pose)
 
     vel_x, vel_y = 0.0, 0.0
     vel_x = msg.twist.twist.linear.x

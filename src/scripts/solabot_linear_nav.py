@@ -87,6 +87,7 @@ def main():
             prob_thresh = 0.98  # smaller the thresh, more careful the driver is	    
             # get col_prob
             car_pose = update.car_pose
+            print("hahahaha: {0}".format(update.car_pose))
             lh_pose = car_pose[0] + [0, lh_dist]
             prob = get_col_prob(0, np.array([lh_pose]))
 

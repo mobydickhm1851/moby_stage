@@ -10,7 +10,9 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from std_msgs.msg import Float32MultiArray
 # import modult for n-d array
+from nav_msgs.msg import Odometry
 from costmap_module.numpy_nd_msg import numpy_nd_msg
+from costmap_module import update
 from matplotlib.figure import figaspect
 
 
@@ -18,7 +20,7 @@ costmap = np.array(np.random.randn(2,250,250))
 
 def costmap_plot(arr):
    
-	
+    
     x_plt = np.zeros((1, arr.shape[1]))[0]
     y_plt = np.arange( arr.shape[1])
 
@@ -30,37 +32,46 @@ def costmap_plot(arr):
 
     w, h = figaspect(1.)
     fig = plt.figure(figsize=(w,h))
-    scat = plt.scatter(x_plt, y_plt, c=zz, marker="s",edgecolors="none", s = 100, alpha = 0.5, cmap='Greys') 
+    scat = plt.scatter(x_plt, y_plt, c=zz, marker="s",edgecolors="none", s = 10, alpha = 0.5, cmap='Greys') 
+
+    car_pose_update = [[1, 1]]
+    scat_car_pose = plt.scatter(car_pose_update[0][0], car_pose_update[0][1], c='red', marker='o', s = 100, alpha = 1)
+
     # comma here is to prevent the arg been passed unpacked, instead of as an arg
-    ani = animation.FuncAnimation(fig, update_plot, fargs=(scat,))
+    ani = animation.FuncAnimation(fig, update_plot, fargs=(scat, scat_car_pose,))
     plt.show()
 
-def update_plot(i, scat):
+def update_plot(i, scat, scat_car_pose):
     arr = costmap[0]
     zz = arr.transpose().reshape(1,-1)[0]
     # set_array control the "color array"
-    rospy.loginfo("zz for color: {0}".format(zz))
     scat.set_array(zz)
+
+    # get car_pose from subscriber
+    car_pose_update = update.car_pose
+    car_idx = update.pose_to_costcor(car_pose_update)
+    # inverse y
+    car_idx[0][1] = 125 - (car_idx[0][1] - 125)
+    scat_car_pose.set_offsets([car_idx])
     #return scat,  
 
 def callback(raw_arr):
     global costmap
     costmap = raw_arr.data
-    print(costmap.shape)
-    rospy.loginfo("costmap[0]: {0}".format(raw_arr.data[0]))
 
 
 if __name__ == '__main__':
     
     rospy.init_node('costmap_plot', anonymous=True)	
     rospy.Subscriber('/costmap', numpy_nd_msg(Float32MultiArray), callback)
+    rospy.Subscriber('/car/base_pose_ground_truth', Odometry, update.update_car_odom)
 
     costmap_plot(costmap[0])
 
     while not rospy.is_shutdown():
 
         try:
-	    pass    
+            pass 
 
         except rospy.ROSInterruptException:
             pass
