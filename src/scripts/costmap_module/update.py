@@ -19,7 +19,7 @@ import time
 
 # NOTE: make the costmap bigger incase the costmap is out of the bound (line 224)
 # NOTE: the above should be considered as a problem
-costmap = np.array(np.random.randn(2,250,250), dtype=np.float32)
+costmap = np.zeros((2,250,250), dtype=np.float32)
 
 # arrays of (n,2) for obs_pose and obs_vel
 obs_list = ['obs0', 'obs1']
@@ -273,8 +273,8 @@ def reset_costmap(t_lh):
     global costmap 
 
     # default a square map
-    map_x_num = map_size / map_res
-    map_y_num = map_size / map_res
+    map_x_num = int(np.ceil(map_size / map_res))
+    map_y_num = int(np.ceil(map_size / map_res))
     
     # t_lh is not None and not < 0
     if t_lh > 0 :        

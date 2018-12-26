@@ -19,15 +19,22 @@
   </node>
 
   <!-- ============= Motion of Obstacles ============ -->
-  <node name="obstacle_command_0" type="obstacle_linear_commands.py" pkg="moby_stage" >
+  <node name="obstacle_command_0" type="obstacle_linear_commands.py" pkg="moby_stage" output="screen">
     <param name="obs_name" type="string" value="$(arg name0)" />
     <param name="init_vel" type="double" value="1" />
+    <param name="init_pose" type="double" value="-6" />
   </node>
-  <node name="obstacle_command_1" type="obstacle_linear_commands.py" pkg="moby_stage" >
+  <node name="obstacle_command_1" type="obstacle_linear_commands.py" pkg="moby_stage" output="screen">
     <param name="obs_name" type="string" value="$(arg name1)" />
     <param name="init_vel" type="double" value="1" />
+    <param name="init_pose" type="double" value="6" />
   </node>
+
+  <!-- ========= solabot linear navigation ========= -->
   <node name="solabot_commands" type="solabot_linear_nav.py" pkg="moby_stage" output="screen">
     <param name="init_vel" type="double" value="0.5" />
-  </node>
+</node>
+
+  <!-- ==== costmap visualization ==== -->
+  <node name="costmap_plot" type="costmap_plot.py" pkg="moby_stage"/>
 </launch>
