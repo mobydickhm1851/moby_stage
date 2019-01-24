@@ -21,7 +21,7 @@
   <!-- ============= Motion of Obstacles ============ -->
   <node name="obstacle_command_0" type="obstacle_linear_commands.py" pkg="moby_stage" output="screen">
     <param name="obs_name" type="string" value="$(arg name0)" />
-    <param name="init_vel" type="double" value="1" />
+    <param name="init_vel" type="double" value="0.7" />
     <param name="init_pose" type="double" value="-6" />
   </node>
   <node name="obstacle_command_1" type="obstacle_linear_commands.py" pkg="moby_stage" output="screen">

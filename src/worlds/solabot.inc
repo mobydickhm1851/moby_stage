@@ -121,7 +121,7 @@ define solabot position
 
 	  #sensors attached to solabot
 #	   solabot_sonars( ) 
-#          solabot_eyes( )
-       	  solabot_lasers( )
+#      solabot_eyes( )
+#  	   solabot_lasers( )
 )
 

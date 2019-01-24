@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="world_file" default="$(find moby_stage)/worlds/multi_robots_intersection.world"/>
+  <arg name="name0" default="car0" />
+  <arg name="name1" default="car1" />
+  <param name="/use_sim_time" value="true"/>
+
+  <!--  ================ Stage ================  -->
+  <node pkg="stage_ros" type="stageros" name="stageros" args="$(arg world_file)">
+    <param name="base_watchdog_timeout" value="0.5"/>
+    <remap from="/robot_0/cmd_vel" to="/$(arg name0)/cmd_vel"/>
+    <remap from="/robot_1/cmd_vel" to="/$(arg name1)/cmd_vel"/>
+    <remap from="/robot_0/odom" to="$(arg name0)/odom"/>
+    <remap from="/robot_1/odom" to="$(arg name1)/odom"/>
+    <remap from="/robot_0/base_pose_ground_truth" to="/$(arg name0)/base_pose_ground_truth"/>
+    <remap from="/robot_1/base_pose_ground_truth" to="/$(arg name1)/base_pose_ground_truth"/>
+  </node>
+
+  <!-- ============= control cars ============ -->
+  <node name="car_control" type="game_teleop.py" pkg="moby_stage" >
+    <param name="car_name" type="string" value="$(arg name0)" />
+  </node>
+
+  <!-- ==== costmap visualization ==== 
+  <node name="car0_costmap_plot" type="car0_costmap_plot.py" pkg="moby_stage"/>
+  <node name="car1_costmap_plot" type="car1_costmap_plot.py" pkg="moby_stage"/>
+  --> 
+</launch>

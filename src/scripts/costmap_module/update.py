@@ -22,7 +22,11 @@ import time
 costmap = np.zeros((2,250,250), dtype=np.float32)
 
 # arrays of (n,2) for obs_pose and obs_vel
-obs_list = ['obs0', 'obs1']
+
+# TEST, change this back
+#obs_list = ['obs0', 'obs1']
+obs_list = ['car1']
+
 obs_pose = np.zeros((len(obs_list), 2))
 obs_vel = np.zeros((len(obs_list), 2))
 obs_dim = 0   # radius, think of as a circle, NOTE: should be modified
@@ -48,8 +52,8 @@ rear_factor = 0
 # Initialize
 map_res = rospy.get_param('~cmap_res', 0.1) # default is 1.0
 map_size = rospy.get_param('~cmap_size', 25) # default is 25
-car_init_y_vel = rospy.get_param('~init_vel', 1.0) # default is 1.0
-car_dim = 1.1 - 0.33    # by result, cuz the shape is rectangular   
+car_init_y_vel = rospy.get_param('~init_vel', 0.0) # default is 0.0
+car_dim = 1.1 - 0.2    # by result, cuz the shape is rectangular   
 obs_dim = 0.67   
 t_res = 0.1
 front_factor = 0.0625
@@ -320,51 +324,98 @@ def update_costmap():
             #if np.all([obs_vel[obs_num][0]]):
             pose = obs_pose + obs_vel * t * t_res
 
-            if np.all(abs(pose[obs_num]) < (map_size / 2 - obs_dim - car_dim - 1)) and t_lh > 0 and obs_vel[obs_num][0] != 0: 
-        
+            # make sure obs pose is within the map and in prediction mode (t_lh > 0) and not all vel is zero
+            if np.all(abs(pose[obs_num]) < (map_size / 2 - obs_dim - car_dim - 1)) and t_lh > 0 and any(obs_vel[obs_num]): 
 
-                # Create Collision Probability in front and rear of obstacles
-                # NOTE: Consider x-vel only ([0]), should be on the direction of the vel-Vector
-            
+            # for loop for costmap on both x and y direction
+                for xy in [0,1]:
+
+                    # Create Collision Probability in front and rear of obstacles
+                    # NOTE: Consider x-vel only ([0]), should be on the direction of the vel-Vector
+############
+                    print("xy now is: {0}; obs_vel: {1}".format(xy, obs_vel[obs_num]))
+
                     # where the cost function = 0
-                    max_front = int(np.ceil(np.sqrt(abs(obs_vel[obs_num][0]) / front_factor) / map_res))
-                    max_rear = int(np.ceil(np.sqrt(abs(obs_vel[obs_num][0]) / rear_factor) / map_res))
+                    max_front = int(np.ceil(np.sqrt(abs(obs_vel[obs_num][xy]) / front_factor) / map_res))
+                    max_rear = int(np.ceil(np.sqrt(abs(obs_vel[obs_num][xy]) / rear_factor) / map_res))
 
-                    # The right and left index
-                    r_idx = arr_idx[obs_num][1][-1]  # upper x
-                    l_idx = arr_idx[obs_num][1][0]   # lower x
+                    # The right and left index(column)
+                    r_idx = arr_idx[obs_num][abs(xy-1)][xy-1]  # upper/front x
+                    l_idx = arr_idx[obs_num][abs(xy-1)][-xy]   # lower/rear x
             
+                    print("when xy == {2}, r_cell will be in range: {0} to {1}".format(r_idx, r_idx +(xy*(-2)+1) * (max_front) + 1, xy))
+
                     # Velocity direction check, 1 if > 0 ; -1 if < 0 
-                    v_check = abs(obs_vel[obs_num][0]) / obs_vel[obs_num][0]
+                    v_check = abs(obs_vel[obs_num][xy]) / obs_vel[obs_num][xy]
 
-                    # For cells on the RIGHT of the obstacle
-                    # (vel > 0 : FRONT; vel < 0 : REAR)	
-                    for r_cell in range(r_idx, r_idx + max_front + 1):
-                
-                        dist_to_obs = (r_cell - r_idx) * map_res * v_check
-                        cost_val = cost_function(dist_to_obs, obs_vel[obs_num][0])
 
-                        # check if the index is out of range
-                        if bordercheck(r_cell):
-                            # change the costval col-wise
-                            change_costmap_val( t, arr_idx[obs_num][0], [r_cell], cost_val)
-                        else :
-                            break
+                    # x-direction prediction costmap
+                    if xy == 0:
 
-                    # For cells on the LEFT of the obstacle
-                    # (vel > 0 : REAR; vel < 0 : FRONT)	
-                    # NOTE: range of max_front can cover max_rear, the other way is not working
-                    for l_cell in range(l_idx - max_front, l_idx + 1 ):
-                
-                        dist_to_obs = (l_cell - l_idx) * map_res * v_check
-                        cost_val = cost_function(dist_to_obs, obs_vel[obs_num][0])
+                        # For cells on the RIGHT of the obstacle
+                        # (vel > 0 : FRONT; vel < 0 : REAR)	
+                        for r_cell in range(r_idx, r_idx +(xy*(-2)+1) * (max_front) + 1):
+                    
+                            dist_to_obs = (r_cell - r_idx) * map_res * v_check
+                            cost_val = cost_function(dist_to_obs, obs_vel[obs_num][xy])
 
-                        # check if the index is out of range
-                        if bordercheck(l_cell):
-                            # change the costval col-wise
-                            change_costmap_val( t, arr_idx[obs_num][0], [l_cell], cost_val)
-                        else :
-                            pass
+                            # check if the index is out of range
+                            if bordercheck(r_cell):
+                                # change the costval col-wise
+                                change_costmap_val( t, arr_idx[obs_num][xy], [r_cell], cost_val)
+                            else :
+                                break
+
+                    # y-direction prediction costmap
+                    elif xy == 1:
+
+                        # For cells on the RIGHT of the obstacle
+                        # (vel > 0 : FRONT; vel < 0 : REAR)	
+                        for r_cell in range( r_idx +(xy*(-2)+1) * (max_front) + 1, r_idx):
+                    
+                            dist_to_obs = -(r_cell - r_idx) * map_res * v_check
+                            cost_val = cost_function(dist_to_obs, obs_vel[obs_num][xy])
+
+                            # check if the index is out of range
+                            if bordercheck(r_cell):
+                                # change the costval row-wise
+                                change_costmap_val( t, np.array([r_cell]), arr_idx[obs_num][xy], cost_val)
+                            else :
+                                break
+
+
+                    # x-direction prediction costmap
+                    if xy == 0:
+                        # For cells on the LEFT of the obstacle
+                        # (vel > 0 : REAR; vel < 0 : FRONT)	
+                        # NOTE: range of max_front can cover max_rear, the other way is not working
+                        for l_cell in range(l_idx -(xy*(-2)+1) * max_front, l_idx + 1 ):
+                    
+                            dist_to_obs = (l_cell - l_idx) * map_res * v_check
+                            cost_val = cost_function(dist_to_obs, obs_vel[obs_num][xy])
+
+                            # check if the index is out of range
+                            if bordercheck(l_cell):
+                                # change the costval col-wise
+                                change_costmap_val( t, arr_idx[obs_num][xy], [l_cell], cost_val)
+                            else :
+                                pass
+
+                    # y-direction prediction costmap
+                    elif xy == 1:
+
+                        for l_cell in range(l_idx, l_idx -(xy*(-2)+1) * max_front + 1 ):
+                    
+                            dist_to_obs = -(l_cell - l_idx) * map_res * v_check
+                            cost_val = cost_function(dist_to_obs, obs_vel[obs_num][xy])
+
+                            # check if the index is out of range
+                            if bordercheck(l_cell):
+                                print("when xy == 1, l_cell: {0}; and the val is : {1}; dist_to_obs is : {2}; vel_y is : {3}".format(l_cell, cost_val, dist_to_obs, obs_vel[obs_num][xy]))
+                                # change the costval row-wise
+                                change_costmap_val( t, np.array([l_cell]), arr_idx[obs_num][xy], cost_val)
+                            else :
+                                pass
             else:
                 break
 

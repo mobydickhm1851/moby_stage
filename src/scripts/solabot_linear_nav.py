@@ -86,15 +86,17 @@ def get_cross_dist(cor_list):
 
     while notfindit:
         
+        # just make sure loop can end
         if dist2cross < int(np.ceil(map_size/map_res)):
 
             dist2cross += 1
-            # NOTE 1-D only!!!! ([0, map_res]), to +X direction
+            # NOTE 1-D only!!!! ([0, map_res]), to +Y direction
             cor_list_temp[0] = cor_list_temp[0] + [0, map_res]
             
             # no obstacle ahead or obstacle is leaving
             # NOTE: and one more or : if obstacle is approaching but we can pass it too
             if get_col_prob(0, cor_list_temp) == 0 or col_prob_diff(0, cor_list_temp) < 0:
+
 
                 notfindit = False
 
@@ -140,7 +142,29 @@ def get_impact_time(cor_list):
 
 
 
+# max acceleration (m/t_res)
+accele = 0.3 #(3 m/s)
+max_vel = 5.0
+min_vel = 0.0 #(no reverse)
+
+def decelerate():
+    accele, min_vel
+    global car_vel
+
+    if car_vel[0][1] - accele >= min_vel:
+
+        car_vel[0][1] -= accele
+
+    else:   
+
+        car_vel[0][1] = min_vel
+
+
+
+
 # ============================================================================ #
+
+
 
 def main():
     
@@ -166,7 +190,7 @@ def main():
         rospy.Subscriber('/{0}/base_pose_ground_truth'.format(obs_list[i]), Odometry,update.update_obs_odom,(i))
 
 
-    rate = rospy.Rate(20) # default is 100
+    rate = rospy.Rate(10) # default is 100
 
     
     while not rospy.is_shutdown():
@@ -186,8 +210,6 @@ def main():
 
             # NOTE different drive_mode ?  
             prob_thresh = 0.0  # smaller the thresh, more careful the driver is	    
-            # max acceleration (m/t_res)
-            accele = 0.7 #(3 m/s)
             # avoid by prediction
             lh_dist = - car_vel[0][1]**2 / (- accele / t_res)   # look ahead distance: able to stop with full break
 
@@ -205,6 +227,7 @@ def main():
                 if costmap.shape[0] > 1:    # prediction mode
                     
                     if col_prob_diff(0, np.array([lh_pose])) > 0:    # obstacle approaching: is it ok to accelerate?
+                        print("Obstacle coming!")
 
                         cross_dist = get_cross_dist(np.array([lh_pose]))
 
@@ -213,19 +236,23 @@ def main():
                         # whether car will collide with obs if it keeping at this car_vel
                         if cross_dist - car_vel[0][1] * time_impact > 0:
 
+                            print("cross_dist is :{0}".format(cross_dist))
+
                             # NOTE: assume const. acceleration ! a = 1m/s (0.1m/t_res)
                             # calculate the root of t: 1/2*a*t**2 + V_0*t - S = 0
-                            roots = np.roots([1/2 * (accele / t_res), car_vel[0][1], - cross_dist])
+                            roots = np.roots([1.0/2.0 * (accele / t_res), car_vel[0][1], - cross_dist])
                             # only one positive root since S > 0
                             root_t = np.amax(roots)
-                            print("the root_t: {0}".format(root_t))
 
                             # accelerate OR decelerate
                             if root_t < time_impact:
+
+                                print("accelerate: root_t = {0}; time_impact = {1}".format(root_t, time_impact))
                                 
                                 car_vel[0][1] += accele     # accelerate
 
                             else :
+                                print("decelerate: root_t = {0}; time_impact = {1}".format(root_t, time_impact))
                                
                                 car_vel[0][1] -= accele     # decelerate
 
