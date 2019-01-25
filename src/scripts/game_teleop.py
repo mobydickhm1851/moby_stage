@@ -80,7 +80,7 @@ if __name__=="__main__":
     rospy.init_node('car_control', anonymous=True)
     car = rospy.get_param('~car_name', 'car0')
     pub = rospy.Publisher('/{0}/cmd_vel'.format(car), Twist, queue_size=5)
-    rate = rospy.Rate(10) # default is 10
+    rate = rospy.Rate(50) # default is 10
 
     x = 0
     th = 0

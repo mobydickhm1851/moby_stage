@@ -24,8 +24,8 @@ go = True
         
 
 obsParam = {
-        #'f':(0.5), # diff increase 0.5 meter
-        #'d':(-0.5), # diff decrease 0.5 meter
+        'f':(0.5), # diff increase 0.5 meter
+        'd':(-0.5), # diff decrease 0.5 meter
         's':(1.2), # speed up * 1.2
         'a':(0.8), # slow down * 0.8
            }
@@ -70,30 +70,25 @@ def set_obs_vel():
     endpoints   
     global obs_dir, go, obs_vel
 
-    #NOTE: this allows different node to have the same name, otherwise the latter will be kicked off!!
     rospy.init_node('obstacle_commands', anonymous=True)	
 
     name0 = rospy.get_param('~obs_name')
-    pose0 = rospy.get_param('~init_pose')
     obs_vel = rospy.get_param('~init_vel', obs_vel) # default is 1.0
 
-    sub_obs0_odom = rospy.Subscriber('/%s/base_pose_ground_truth' % name0, Odometry, get_obs_pose)
-
     pub_obs0_vel = rospy.Publisher('/%s/cmd_vel' % name0, Twist, queue_size=5)
-
+    sub_obs0_odom = rospy.Subscriber('/%s/base_pose_ground_truth' % name0, Odometry, get_obs_pose)
     rate = rospy.Rate(20) # default is 100
     
-
-
-    if pose0 > 0:
+    if obs_xpose > 0:
         obs_dir = -1
-    elif pose0 < 0:
+        print("obs_xpose: {0} ; and obs_dir: {1}".format(obs_xpose, obs_dir) )
+    elif obs_xpose < 0:
         obs_dir = 1
-    #    rospy.loginfo("OUT OF THE LOOP ")
+        print("obs_xpose: {0} ; and obs_dir: {1}".format(obs_xpose, obs_dir) )
 
     while not rospy.is_shutdown():
-	try:
 
+	try:
 	    key = getKey()
 #	    if key == 'f':
 #	        endpoints[1] += obsParam['f']
@@ -125,6 +120,7 @@ def set_obs_vel():
 
 	    if go:  
                 pub_obs0_vel.publish(twist0)
+		rospy.loginfo(obs_dir)
 
 	    else:
 		pass

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <arg name="times" default="2" />
+  <!-- =============  rosbag  ============== -->
+  <arg name="path" default="$(find moby_stage)/rosbag/" />
+  <arg name="session" default="play_paul_$(arg times).bag" />
+  <arg name="topic1" default="/car0/base_pose_ground_truth"/>
+  <arg name="topic2" default="/car1/base_pose_ground_truth"/>
+  <node pkg="rosbag" type="play" name="playback" output="screen" args="--pause $(arg path)$(arg session)"/>
+
+</launch>
