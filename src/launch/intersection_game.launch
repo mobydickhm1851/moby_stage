@@ -21,10 +21,12 @@
 
   <!-- =============  rosbag  ============== -->
   <arg name="path" default="$(find moby_stage)/rosbag/" />
-  <arg name="session" default="play_paul_6.bag" />
+  <arg name="session" default="james_james_1.bag" />
   <arg name="topic1" default="/car0/base_pose_ground_truth"/>
   <arg name="topic2" default="/car1/base_pose_ground_truth"/>
-  <node pkg="rosbag" type="record" name="rocorder" output="screen" args="-O $(arg path)$(arg session) $(arg topic1) $(arg topic2)" />
+  <arg name="topic3" default="/car0/cmd_vel"/>
+  <arg name="topic4" default="/car1/cmd_vel"/>
+  <node pkg="rosbag" type="record" name="rocorder" output="screen" args="-O $(arg path)$(arg session) $(arg topic1) $(arg topic2) $(arg topic3) $(arg topic4) " />
 
 
   <!-- ==== costmap visualization ==== 

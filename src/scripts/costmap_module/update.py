@@ -23,10 +23,12 @@ costmap = np.zeros((2,250,250), dtype=np.float32)
 
 # arrays of (n,2) for obs_pose and obs_vel
 
-# TEST, change this back
-#obs_list = ['obs0', 'obs1']
-obs_list = ['car1']
+#NOTE: this is a bug-like, FIX THIS!!
+# for multi_robot_intersection.launch/car0/1_linear_nay.py, use this
+obs_list = ['car0']
 
+# for intersection.launch/solabot_linear_nay.py, use this
+#obs_list = ['obs0', 'obs1']
 obs_pose = np.zeros((len(obs_list), 2))
 obs_vel = np.zeros((len(obs_list), 2))
 obs_dim = 0   # radius, think of as a circle, NOTE: should be modified
@@ -52,7 +54,6 @@ rear_factor = 0
 # Initialize
 map_res = rospy.get_param('~cmap_res', 0.1) # default is 1.0
 map_size = rospy.get_param('~cmap_size', 25) # default is 25
-car_init_y_vel = rospy.get_param('~init_vel', 0.0) # default is 0.0
 car_dim = 1.1 - 0.2    # by result, cuz the shape is rectangular   
 obs_dim = 0.67   
 t_res = 0.1

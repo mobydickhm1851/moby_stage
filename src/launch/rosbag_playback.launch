@@ -2,10 +2,24 @@
 
 <launch>
 
-  <arg name="times" default="2" />
+  <arg name="world_file" default="$(find moby_stage)/worlds/multi_robots_intersection.world"/>
+  <arg name="name0" default="car0" />
+  <arg name="name1" default="car1" />
+  <param name="/use_sim_time" value="true"/>
+
+  <!--  ================ Stage ================  -->
+  <!-- delete the remap of base_pose_ground_truth to keep the topic name of rosbag unique -->
+  <node pkg="stage_ros" type="stageros" name="stageros" args="$(arg world_file)">
+    <param name="base_watchdog_timeout" value="0.5"/>
+    <remap from="/robot_0/cmd_vel" to="/$(arg name0)/cmd_vel"/>
+    <remap from="/robot_1/cmd_vel" to="/$(arg name1)/cmd_vel"/>
+  </node>
+
   <!-- =============  rosbag  ============== -->
+  <arg name="times" default="2" />
+
   <arg name="path" default="$(find moby_stage)/rosbag/" />
-  <arg name="session" default="play_paul_$(arg times).bag" />
+  <arg name="session" default="paul_james_$(arg times).bag" />
   <arg name="topic1" default="/car0/base_pose_ground_truth"/>
   <arg name="topic2" default="/car1/base_pose_ground_truth"/>
   <node pkg="rosbag" type="play" name="playback" output="screen" args="--pause $(arg path)$(arg session)"/>

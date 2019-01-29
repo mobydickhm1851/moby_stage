@@ -171,7 +171,8 @@ def main():
     global car_vel
 
     # car's initial movement 
-    car_vel[0][1] = update.car_init_y_vel
+    car_init_y_vel = rospy.get_param('~init_vel', 0.5)
+    car_vel[0][1] = car_init_y_vel
 
 # Initialize the node    
     rospy.init_node('solabot_commands', anonymous=True)	
@@ -185,7 +186,8 @@ def main():
 # ROS Subscribers
     rospy.Subscriber('/car/base_pose_ground_truth', Odometry, update.update_car_odom)
     # data of the "obstacles"
-    obs_list = update.obs_list
+    obs_list = ['obs0', 'obs1']
+
     for i in range(len(obs_list)):
         rospy.Subscriber('/{0}/base_pose_ground_truth'.format(obs_list[i]), Odometry,update.update_obs_odom,(i))
 
@@ -279,11 +281,11 @@ def main():
             else:
                 print("no obstacle ahead!!!!!!!!!!!!")
                 
-                if car_vel[0][1] + accele <= update.car_init_y_vel:
+                if car_vel[0][1] + accele <= car_init_y_vel:
 
                     car_vel[0][1] += accele
 
-                elif car_vel[0][1] - accele >= update.car_init_y_vel:
+                elif car_vel[0][1] - accele >= car_init_y_vel:
                     
                     car_vel[0][1] -= accele
 

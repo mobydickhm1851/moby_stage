@@ -172,7 +172,8 @@ def main():
     obs_list = ['car0']
 
     # car's initial movement 
-    car_vel[0][1] = update.car_init_y_vel
+    car_init_y_vel = rospy.get_param('~init_vel', 1.0) # default is 0.0
+    car_vel[0][1] = car_init_y_vel
 
 # Initialize the node    
     rospy.init_node('solabot_commands', anonymous=True)	
@@ -277,11 +278,11 @@ def main():
             else:
                 print("no obstacle ahead!!!!!!!!!!!!")
                 
-                if car_vel[0][1] + accele <= update.car_init_y_vel:
+                if car_vel[0][1] + accele <= car_init_y_vel:
 
                     car_vel[0][1] += accele
 
-                elif car_vel[0][1] - accele >= update.car_init_y_vel:
+                elif car_vel[0][1] - accele >= car_init_y_vel:
                     
                     car_vel[0][1] -= accele
 
