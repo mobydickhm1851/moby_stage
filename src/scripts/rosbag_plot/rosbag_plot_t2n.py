@@ -80,50 +80,29 @@ def animate_plot(i):
     y2 = list(position_profile_0[:,1])
     y3 = list(position_profile_1[:,1])
     
+    # time to node plot
+    y_t2n_0 = list(abs(np.array(y2)/np.array(y0))) 
+    y_t2n_1 = list(abs(np.array(y3)/np.array(y1))) 
 
     ax1.clear()
-    ax2.clear()
 
-    line1, = ax1.plot(x0, y0, light_blue, label='car0_y_velocity')
-    line2, = ax1.plot(x1, y1, light_orange, label='car1_x_velocity')
-    line3, = ax2.plot(x2, y2, green_blue, label='car0_y_position')
-    line4, = ax2.plot(x3, y3, light_yellow, label='car1_x_position')
+    line1, = ax1.plot(x0, y_t2n_0, light_blue, label='car0_time2node ')
+    line2, = ax1.plot(x1, y_t2n_1, light_orange, label='car1_time2node')
     
-    ax1.set_ylabel('velocity (m/s)')
+    ax1.set_ylabel('time to node (s)')
     ax1.set_xlabel('time (s)')
-    ax2.set_ylabel('position (m)')
-    # to keep 0 of two axis aligned
-    ax1.set_ylim(-6,6)
-    ax2.set_ylim(-20,20)
+    ax1.set_ylim(0,6)
 
-    # dist to intersect difference
-    # this is kind of a bug, the len() of two list might be different    
-    if len(x2) > len(x3):
-        diff = len(x2)-len(x3)
-        y2 = y2[0:-diff]
-        y4 = list(np.array(y3) - np.array(y2))
-        line5, = ax2.plot(x3, y4, apple_green, label='dist_to_intersection_diff')
-    
 
-    elif len(x2) < len(x3) :
-        diff = len(x3)-len(x2)
-        y3 = y3[0:-diff]
-        y4 = list(np.array(y3) - np.array(y2))
-        line5, = ax2.plot(x2, y4, apple_green, label='dist_to_intersection_diff')
-    
-    elif len(x2) == len(x3) :
-        y4 = list(np.array(y3) - np.array(y2))
-        line5, = ax2.plot(x2, y4, apple_green, label='dist_to_intersection_diff')
-
-    plt.legend(handles=[line1, line2, line3, line4, line5], loc='lower right')
-    plt.title("Velocity and Position Profile in Simulation")
+    plt.legend(handles=[line1, line2], loc='lower right')
+    plt.title("Time to Node in Simulation")
 
 
 
 if __name__ == '__main__':
 
     # ROS subscriber Section
-    rospy.init_node('rosbag_plot', anonymous=True)
+    rospy.init_node('rosbag_plot_t2n', anonymous=True)
 
     obs_list = ['car0', 'car1']
     for i in range(len(obs_list)):
@@ -134,7 +113,6 @@ if __name__ == '__main__':
     # figure_1
     fig = plt.figure()
     ax1 = fig.add_subplot(1,1,1)
-    ax2 = ax1.twinx()  # share the same x axis and have different left and right y-axis
     ani = animation.FuncAnimation(fig, animate_plot, interval= update_rate)
 
     plt.show()

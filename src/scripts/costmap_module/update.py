@@ -17,9 +17,25 @@ import time
 
 # ====== global variable ======= #
 
+# Initialize
+
+# map parameters from intersection.launch
+map_res = rospy.get_param('~cmap_res', 0.1) # default is 1.0
+map_size = rospy.get_param('~cmap_size', 40) # default is 25
+car_dim = 1.1 - 0.2    # by result, cuz the shape is rectangular   
+obs_dim = 0.67   
+
+# time resolution
+t_res = 0.1   # prediction array for every 0.1s
+
+# factors for cost function
+front_factor = 0.0625
+rear_factor = 0.25
+
+
 # NOTE: make the costmap bigger incase the costmap is out of the bound (line 224)
 # NOTE: the above should be considered as a problem
-costmap = np.zeros((2,250,250), dtype=np.float32)
+costmap = np.zeros((2, map_size/map_res, map_size/map_res), dtype=np.float32)
 
 # arrays of (n,2) for obs_pose and obs_vel
 
@@ -33,32 +49,16 @@ obs_pose = np.zeros((len(obs_list), 2))
 obs_vel = np.zeros((len(obs_list), 2))
 obs_dim = 0   # radius, think of as a circle, NOTE: should be modified
 
-# map parameters from intersection.launch
-map_res = 0
-map_size = 0
 
 # car parameters
 car_vel = np.array([[0.0, 0.0]])
 car_pose = np.array([[0.0, 0.0]])
 car_dim = 0   # radius, think of as a circle, NOTE: should be modified
 
-# time resolution
-t_res = 0   # prediction array for every 0.1s
-
-# factors for cost function
-front_factor = 0
-rear_factor = 0
 
 
 
-# Initialize
-map_res = rospy.get_param('~cmap_res', 0.1) # default is 1.0
-map_size = rospy.get_param('~cmap_size', 25) # default is 25
-car_dim = 1.1 - 0.2    # by result, cuz the shape is rectangular   
-obs_dim = 0.67   
-t_res = 0.1
-front_factor = 0.0625
-rear_factor = 0.25
+
 
 # ============================== #
 

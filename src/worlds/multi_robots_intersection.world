@@ -3,33 +3,33 @@ include "obstacle.inc"
 include "solabot.inc"
 include "origin.inc"
 
-size [15 15]
+size [50 50]
 
 # configure the GUI window
 window
 (
 	size [700.00 700.00]
-	scale 30
+	scale 15
 )
 
 # load and environment bitmap
 floorplan
 (
-	bitmap "bitmaps/intersection.png"
-	size [20 20 0.5]
+	bitmap "bitmaps/intersection_2.png"
+	size [40 40 0.5]
 )
 
 solabot
 (
 	name "solabot_0"
-	pose [0 -6 0 0 ]
+	pose [0 -15 0 0 ]
 	color "blue"
 )
 
 solabot
 (
 	name "solabot_1"
-	pose [-6 0 0 -90 ]
+	pose [-15 0 0 -90 ]
 	color "red"
 )
 

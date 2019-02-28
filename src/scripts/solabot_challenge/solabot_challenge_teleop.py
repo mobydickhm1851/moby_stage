@@ -8,10 +8,10 @@ from pygame.locals import *
 from solabot_challenge import *
 
 
-minVel = -2.0
-maxVel = 2.0
-accele = 0.1
-brake = accele*1.7
+minVel = -7.0
+maxVel = 7.0
+accele = 0.075
+brake = accele*1.86
 friction = accele/2
 keyPressed = {}
 car0_vel = 0

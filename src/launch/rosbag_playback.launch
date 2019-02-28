@@ -16,12 +16,16 @@
   </node>
 
   <!-- =============  rosbag  ============== -->
-  <arg name="times" default="2" />
+  <arg name="times" default="1" />
 
   <arg name="path" default="$(find moby_stage)/rosbag/" />
-  <arg name="session" default="paul_james_$(arg times).bag" />
+  <arg name="session" default="tsaiht_chenpy_$(arg times).bag" />
   <arg name="topic1" default="/car0/base_pose_ground_truth"/>
   <arg name="topic2" default="/car1/base_pose_ground_truth"/>
   <node pkg="rosbag" type="play" name="playback" output="screen" args="--pause $(arg path)$(arg session)"/>
+
+  <!-- ============= plotting ============== -->
+  <node name="rosbag_plot" pkg="moby_stage" type="rosbag_plot.py" />
+  <node name="rosbag_plot_t2n" pkg="moby_stage" type="rosbag_plot_t2n.py" />
 
 </launch>

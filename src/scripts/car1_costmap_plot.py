@@ -16,11 +16,30 @@ from costmap_module import update
 from matplotlib.figure import figaspect
 
 
-costmap = np.array(np.random.randn(2,250,250))
+costmap = update.costmap
+car_pose_update = update.car_pose
+# costmap = np.array(np.random.randn(2,250,250))
+
+map_size = update.map_size
+map_res = update.map_res
+
+def update_plot(i, scat, scat_car_pose):
+    arr = costmap[0]
+    zz = arr.transpose().reshape(1,-1)[0]
+    # set_array control the "color array"
+    scat.set_array(zz)
+
+    # get car_pose from subscriber
+    car_pose_update = update.car_pose
+    car_idx = update.pose_to_costcor(car_pose_update)
+
+    # inverse y
+    car_idx[0][1] = map_size/map_res - car_idx[0][1] 
+    scat_car_pose.set_offsets([car_idx])
+    #return scat,  
 
 def costmap_plot(arr):
    
-    
     x_plt = np.zeros((1, arr.shape[1]))[0]
     y_plt = np.arange( arr.shape[1])
 
@@ -34,26 +53,11 @@ def costmap_plot(arr):
     fig = plt.figure(figsize=(w,h))
     scat = plt.scatter(x_plt, y_plt, c=zz, marker="s",edgecolors="none", s = 10, alpha = 0.5, cmap='Greys') 
 
-    car_pose_update = [[1, 1]]
     scat_car_pose = plt.scatter(car_pose_update[0][0], car_pose_update[0][1], c='red', marker='o', s = 100, alpha = 1)
 
     # comma here is to prevent the arg been passed unpacked, instead of as an arg
-    ani = animation.FuncAnimation(fig, update_plot, fargs=(scat, scat_car_pose,))
+    ani = animation.FuncAnimation(fig, update_plot, fargs=(scat, scat_car_pose,), interval = 10)
     plt.show()
-
-def update_plot(i, scat, scat_car_pose):
-    arr = costmap[0]
-    zz = arr.transpose().reshape(1,-1)[0]
-    # set_array control the "color array"
-    scat.set_array(zz)
-
-    # get car_pose from subscriber
-    car_pose_update = update.car_pose
-    car_idx = update.pose_to_costcor(car_pose_update)
-    # inverse y
-    car_idx[0][1] = 125 - (car_idx[0][1] - 125)
-    scat_car_pose.set_offsets([car_idx])
-    #return scat,  
 
 def callback(raw_arr):
     global costmap

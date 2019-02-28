@@ -60,7 +60,7 @@ def get_col_prob(t, cor_lst):
     idx = update.pose_to_costcor(cor_lst)
     costmap = update.costmap
     col_prob = costmap[t][idx[0][1]][idx[0][0]]
-    
+
     return col_prob
 
 
