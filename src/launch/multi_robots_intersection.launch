@@ -3,7 +3,7 @@
   <arg name="world_file" default="$(find moby_stage)/worlds/multi_robots_intersection.world"/>
   <arg name="name0" default="car0" />
   <arg name="name1" default="car1" />
-  <arg name="cmap_size_default" default="40" />
+  <arg name="cmap_size_default" default="45" />
   <param name="/use_sim_time" value="true"/>
 
   <!--  ================ Stage ================  -->
@@ -17,8 +17,9 @@
     <remap from="/robot_1/base_pose_ground_truth" to="/$(arg name1)/base_pose_ground_truth"/>
   </node>
 
-  <!-- ============= navigation of cars ============ -->
-  <node name="car_0_nav" type="car0_linear_nav.py" pkg="moby_stage" >
+  <!-- ============= navigation of cars ============ 
+  <node name="car_0_nav" type="car0_linear_nav.py" pkg="moby_stage" launch-prefix="xterm -e python -m pdb"> -->
+  <node name="car_0_nav" type="car0_linear_nav.py" pkg="moby_stage" output="screen">
     <param name="obs_name" type="string" value="$(arg name0)" />
     <param name="init_vel" type="double" value="0.9" />
     <param name="cmap_size" type="double" value="$(arg cmap_size_default)" />
@@ -30,6 +31,6 @@
   </node>
 
   <!-- ==== costmap visualization ==== -->
-  <node name="car0_costmap_plot" type="car0_costmap_plot.py" pkg="moby_stage" launch-prefix="xterm -e python -m pdb"/>
+  <node name="car0_costmap_plot" type="car0_costmap_plot.py" pkg="moby_stage" />
   <node name="car1_costmap_plot" type="car1_costmap_plot.py" pkg="moby_stage" />
 </launch>

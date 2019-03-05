@@ -16,12 +16,13 @@ from costmap_module import update
 from matplotlib.figure import figaspect
 
 
-costmap = update.costmap
-car_pose_update = update.car_pose
-# costmap = np.array(np.random.randn(2,250,250))
-
 map_size = update.map_size
 map_res = update.map_res
+
+costmap = np.array(0.2 * np.random.randn(2, map_size/map_res, map_size/map_res) + 0.5, dtype=np.float32)
+
+car_pose_update = update.car_pose
+
 
 def update_plot(i, scat, scat_car_pose):
     arr = costmap[0]
@@ -51,7 +52,7 @@ def costmap_plot(arr):
 
     w, h = figaspect(1.)
     fig = plt.figure(figsize=(w,h))
-    scat = plt.scatter(x_plt, y_plt, c=zz, marker="s",edgecolors="none", s = 10, alpha = 0.5, cmap='Greys') 
+    scat = plt.scatter(x_plt, y_plt, c=zz, marker="s",edgecolors="none", s = 10, alpha = 0.5, cmap='Reds') 
 
     scat_car_pose = plt.scatter(car_pose_update[0][0], car_pose_update[0][1], c='red', marker='o', s = 100, alpha = 1)
 

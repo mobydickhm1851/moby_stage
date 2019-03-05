@@ -14,7 +14,8 @@ from costmap_module.numpy_nd_msg import numpy_nd_msg
 from costmap_module import update 
 #import costmap.update_costmap 
 import time
-
+# debug
+import pdb
 
 
 
@@ -59,6 +60,7 @@ def get_col_prob(t, cor_lst):
 
     idx = update.pose_to_costcor(cor_lst)
     costmap = update.costmap
+
     col_prob = costmap[t][idx[0][1]][idx[0][0]]
 
     return col_prob
@@ -111,7 +113,6 @@ def get_cross_dist(cor_list):
 
 # the time from now to actual impact (col_prob == 1)
 def get_impact_time(cor_list):
-
     costmap = update.costmap
     cor_list_temp = cor_list.copy()
     time_impact = 0
@@ -202,10 +203,12 @@ def main():
         finally:
 
             # update the costmap
+            #pdb.set_trace()
             update.update_costmap()
-            costmap = update.costmap
-            pub_costmap.publish(data = costmap)
             
+            costmap = update.costmap
+
+            pub_costmap.publish(data = costmap)
 
             # NOTE different drive_mode ?  
             prob_thresh = 0.0  # smaller the thresh, more careful the driver is	    
@@ -235,7 +238,6 @@ def main():
                         # whether car will collide with obs if it keeping at this car_vel
                         if cross_dist - car_vel[0][1] * time_impact > 0:
 
-                            print("cross_dist is :{0}".format(cross_dist))
 
                             # NOTE: assume const. acceleration ! a = 1m/s (0.1m/t_res)
                             # calculate the root of t: 1/2*a*t**2 + V_0*t - S = 0
@@ -246,12 +248,10 @@ def main():
                             # accelerate OR decelerate
                             if root_t < time_impact:
 
-                                print("accelerate: root_t = {0}; time_impact = {1}".format(root_t, time_impact))
                                 
                                 car_vel[0][1] += accele     # accelerate
 
                             else :
-                                print("decelerate: root_t = {0}; time_impact = {1}".format(root_t, time_impact))
                                
                                 car_vel[0][1] -= accele     # decelerate
 

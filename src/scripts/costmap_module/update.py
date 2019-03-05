@@ -21,7 +21,7 @@ import time
 
 # map parameters from intersection.launch
 map_res = rospy.get_param('~cmap_res', 0.1) # default is 1.0
-map_size = rospy.get_param('~cmap_size', 40) # default is 25
+map_size = rospy.get_param('~cmap_size', 45) # default is 25
 car_dim = 1.1 - 0.2    # by result, cuz the shape is rectangular   
 obs_dim = 0.67   
 
@@ -35,7 +35,7 @@ rear_factor = 0.25
 
 # NOTE: make the costmap bigger incase the costmap is out of the bound (line 224)
 # NOTE: the above should be considered as a problem
-costmap = np.zeros((2, map_size/map_res, map_size/map_res), dtype=np.float32)
+costmap = np.zeros((2, map_size/map_res , map_size/map_res  ), dtype=np.float32)
 
 # arrays of (n,2) for obs_pose and obs_vel
 
@@ -47,13 +47,13 @@ obs_list = ['car0']
 #obs_list = ['obs0', 'obs1']
 obs_pose = np.zeros((len(obs_list), 2))
 obs_vel = np.zeros((len(obs_list), 2))
-obs_dim = 0   # radius, think of as a circle, NOTE: should be modified
+obs_dim = 1.1   # radius, think of as a circle, NOTE: should be modified
 
 
 # car parameters
 car_vel = np.array([[0.0, 0.0]])
 car_pose = np.array([[0.0, 0.0]])
-car_dim = 0   # radius, think of as a circle, NOTE: should be modified
+car_dim = 1.1   # radius, think of as a circle, NOTE: should be modified
 
 
 
