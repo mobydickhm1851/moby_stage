@@ -18,10 +18,10 @@ import time
 # ====== global variable ======= #
 
 # Initialize
+map_res = 1.0
+map_size = 1.0
 
 # map parameters from intersection.launch
-map_res = rospy.get_param('~cmap_res', 0.1) # default is 1.0
-map_size = rospy.get_param('~cmap_size', 45) # default is 25
 car_dim = 1.1 - 0.2    # by result, cuz the shape is rectangular   
 obs_dim = 0.67   
 
@@ -62,6 +62,12 @@ car_dim = 1.1   # radius, think of as a circle, NOTE: should be modified
 
 # ============================== #
 
+# Initialize the map
+def init_map(res, size):
+    global map_res, map_size
+    
+    map_res = res
+    map_size = size
 
 
 
@@ -334,7 +340,6 @@ def update_costmap():
                     # Create Collision Probability in front and rear of obstacles
                     # NOTE: Consider x-vel only ([0]), should be on the direction of the vel-Vector
 ############
-                    print("xy now is: {0}; obs_vel: {1}".format(xy, obs_vel[obs_num]))
 
                     # where the cost function = 0
                     max_front = int(np.ceil(np.sqrt(abs(obs_vel[obs_num][xy]) / front_factor) / map_res))
@@ -344,7 +349,6 @@ def update_costmap():
                     r_idx = arr_idx[obs_num][abs(xy-1)][xy-1]  # upper/front x
                     l_idx = arr_idx[obs_num][abs(xy-1)][-xy]   # lower/rear x
             
-                    print("when xy == {2}, r_cell will be in range: {0} to {1}".format(r_idx, r_idx +(xy*(-2)+1) * (max_front) + 1, xy))
 
                     # Velocity direction check, 1 if > 0 ; -1 if < 0 
                     v_check = abs(obs_vel[obs_num][xy]) / obs_vel[obs_num][xy]
@@ -412,7 +416,6 @@ def update_costmap():
 
                             # check if the index is out of range
                             if bordercheck(l_cell):
-                                print("when xy == 1, l_cell: {0}; and the val is : {1}; dist_to_obs is : {2}; vel_y is : {3}".format(l_cell, cost_val, dist_to_obs, obs_vel[obs_num][xy]))
                                 # change the costval row-wise
                                 change_costmap_val( t, np.array([l_cell]), arr_idx[obs_num][xy], cost_val)
                             else :

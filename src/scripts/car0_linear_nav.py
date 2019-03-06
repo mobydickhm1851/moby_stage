@@ -172,8 +172,14 @@ def main():
     
     obs_list = ['car1']
 
-    # car's initial movement 
-    car_init_y_vel = rospy.get_param('~init_vel', 0.5) # default is 0.0
+
+# initialize the map
+    map_res = rospy.get_param('/car0_nav/cmap_res', 0.1) # default is 1.0
+    map_size = rospy.get_param('/car0_nav/cmap_size', 45) # default is 25
+    update.init_map(map_res, map_size)
+
+# car's initial movement 
+    car_init_y_vel = rospy.get_param('/car0_nav/init_vel', 0.5) # default is 0.0
     car_vel[0][1] = car_init_y_vel
 
 # Initialize the node    

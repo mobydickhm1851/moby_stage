@@ -16,8 +16,10 @@ from costmap_module import update
 from matplotlib.figure import figaspect
 
 
-map_size = update.map_size
-map_res = update.map_res
+# initialize the map
+map_res = rospy.get_param('/car1_costmap_plot/cmap_res', 0.1) # default is 1.0
+map_size = rospy.get_param('/car1_costmap_plot/cmap_size', 45) # default is 45
+update.init_map(map_res, map_size)
 
 costmap = np.array(0.2 * np.random.randn(2, map_size/map_res, map_size/map_res) + 0.5, dtype=np.float32)
 

@@ -18,8 +18,11 @@ from matplotlib.figure import figaspect
 # debug
 import pdb
 
-map_size = update.map_size
-map_res = update.map_res
+
+# initialize the map
+map_res = rospy.get_param('/car0_costmap_plot/cmap_res', 0.1) # default is 1.0
+map_size = rospy.get_param('/car0_costmap_plot/cmap_size', 45) # default is 45
+update.init_map(map_res, map_size)
 
 costmap = np.array(0.2 * np.random.randn(2, map_size/map_res, map_size/map_res) + 0.5, dtype=np.float32)
 
@@ -80,7 +83,8 @@ def update_plot(i, scat, scat_car_pose):
 
 
 def callback(raw_arr):
-    global costmap
+    global costmap, map_size, map_res
+    
     costmap = raw_arr.data
 
 
