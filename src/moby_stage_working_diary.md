@@ -15,14 +15,21 @@ Unsolved Problems
     - line : 22
     - detailed info : 
         Originally the costmap was defined as 
-        '''costmap = update.costmap''' 
+        
+            costmap = update.costmap
+               
         where the value is 
-        ''' costmap = np.zeros((2,map_size/map_res, map_size/map_res), dtype=np.float32) '''
+        
+            costmap = np.zeros((2,map_size/map_res, map_size/map_res), dtype=np.float32) 
+             
         which doesn't show on plotting figure (the values are subscribed correctly).
         Then this line is change to the present form
-        ''' costmap=np.array(0.2*np.random.randn(2, map_size/map_res, map_size/map_res)+0.5, dtype=np.float32)'''
+        
+            costmap=np.array(0.2*np.random.randn(2, map_size/map_res, map_size/map_res)+0.5, dtype=np.float32)
+            
         where the only different is __initial value is not zero__, but it then plots the costmap normally.
     - guesses : 
         Might due to the method I used to chsnge the color setting which is 
-        ''' scat.set_array(zz) (line 69)''' 
+        
+            scat.set_array(zz) (line 69) 
         The function 'set_array()' change the __color setting of the plot__.
