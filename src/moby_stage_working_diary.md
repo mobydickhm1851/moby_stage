@@ -32,4 +32,4 @@ Unsolved Problems
         Might due to the method I used to chsnge the color setting which is 
         
             scat.set_array(zz) (line 69) 
-        The function 'set_array()' change the __color setting of the plot__.
+        The function `set_array()` change the __color setting of the plot__.
