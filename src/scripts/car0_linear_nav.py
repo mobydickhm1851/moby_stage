@@ -140,10 +140,13 @@ def get_impact_time(cor_list):
 
             return 0
 
+##########################################
+##==== acceleration and deceleration====##
+##########################################
 
-
-# max acceleration (m/t_res)
-accele = 0.3 #(3 m/s)
+# max acceleration (m/s)
+accele = 0.075 #(0.075 m/s^2)
+brake = accele*1.86
 max_vel = 5.0
 min_vel = 0.0 #(no reverse)
 
@@ -151,17 +154,25 @@ def decelerate():
     accele, min_vel
     global car_vel
 
-    if car_vel[0][1] - accele >= min_vel:
-
-        car_vel[0][1] -= accele
+    if car_vel[0][1] - brake >= min_vel:
+        car_vel[0][1] -= brake
 
     else:   
-
         car_vel[0][1] = min_vel
 
 
+def accelerate():
+    accele, max_vel
+    global car_vel
+
+    if car_vel[0][1] + accele <= max_vel:
+        car_vel[0][1] += accele
+
+    else:
+        car_vel[0][1] = max_vel
 
 
+# ============================================================================ #
 # ============================================================================ #
 
 
@@ -198,7 +209,7 @@ def main():
         rospy.Subscriber('/{0}/base_pose_ground_truth'.format(obs_list[i]), Odometry,update.update_obs_odom,(i))
 
 
-    rate = rospy.Rate(10) # default is 100
+    rate = rospy.Rate(100) # default is 100
 
     
     while not rospy.is_shutdown():
@@ -218,13 +229,13 @@ def main():
 
             # NOTE different drive_mode ?  
             prob_thresh = 0.0  # smaller the thresh, more careful the driver is	    
-            # avoid by prediction
-            lh_dist = - car_vel[0][1]**2 / (- accele / t_res)   # look ahead distance: able to stop with full break
+            # avoid by prediction (lh_dist in meters)
+            lh_dist = 0.5 * car_vel[0][1]**2 / brake + 0.5   # look ahead distance: able to stop with full break
 
 
             # get col_prob
             car_pose = update.car_pose
-            lh_pose = car_pose[0] + [0, lh_dist]
+            lh_pose = car_pose[0] + [0, lh_dist * t_res]  # this is claculated in every t_res
             prob = get_col_prob(0, np.array([lh_pose]))
 
 
@@ -237,29 +248,28 @@ def main():
                     if col_prob_diff(0, np.array([lh_pose])) > 0:    # obstacle approaching: is it ok to accelerate?
                         print("Obstacle coming!")
 
-                        cross_dist = get_cross_dist(np.array([lh_pose]))
+                        cross_dist = get_cross_dist(np.array([lh_pose]))  # in meters
 
-                        time_impact = get_impact_time(np.array([lh_pose]))
+                        time_impact = get_impact_time(np.array([lh_pose]))  # in seconds
                     
-                        # whether car will collide with obs if it keeping at this car_vel
+                        # the car will collide with obs if it keeping at this car_vel
                         if cross_dist - car_vel[0][1] * time_impact > 0:
 
 
                             # NOTE: assume const. acceleration ! a = 1m/s (0.1m/t_res)
                             # calculate the root of t: 1/2*a*t**2 + V_0*t - S = 0
-                            roots = np.roots([1.0/2.0 * (accele / t_res), car_vel[0][1], - cross_dist])
+                            roots = np.roots([1.0/2.0 * (accele), car_vel[0][1], - cross_dist])
                             # only one positive root since S > 0
                             root_t = np.amax(roots)
 
                             # accelerate OR decelerate
                             if root_t < time_impact:
-
                                 
-                                car_vel[0][1] += accele     # accelerate
+                                accelerate()     # accelerate
 
                             else :
                                
-                                car_vel[0][1] -= accele     # decelerate
+                                decelerate()    # decelerate
 
                         else:
                             # keep moving can pass the obstacle
@@ -267,17 +277,17 @@ def main():
 
                     elif col_prob_diff(0, np.array([lh_pose])) < 0:    # obstacle leaving
 
-                        car_vel[0][1] += accele     # accelerate
+                        accelerate()     # accelerate
 
                     else:   # diff = 0 (prob = 1)
                         
-                        car_vel[0][1] = 0   # not going to move a bit
+                        decelerate()   # not going to move a bit
 
                 else:   #NOTE: local planner!!! we don't have this yet
 
                     if prob == 1:
                         
-                        car_vel[0][1] -= accele     # decelerate
+                        decelerate()     # decelerate
 
 
             # NO OBSTACLE AHEAD
@@ -286,11 +296,11 @@ def main():
                 
                 if car_vel[0][1] + accele <= car_init_y_vel:
 
-                    car_vel[0][1] += accele
+                    accelerate()   # accelerate
 
-                elif car_vel[0][1] - accele >= car_init_y_vel:
+                elif car_vel[0][1] - brake >= car_init_y_vel:
                     
-                    car_vel[0][1] -= accele
+                    decelerate()   # decelerate
 
             twist = Twist()
             twist.linear.x = 0; twist.linear.y = car_vel[0][1]; twist.linear.z = 0

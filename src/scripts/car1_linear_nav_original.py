@@ -14,8 +14,7 @@ from costmap_module.numpy_nd_msg import numpy_nd_msg
 from costmap_module import update 
 #import costmap.update_costmap 
 import time
-# debug
-import pdb
+
 
 
 
@@ -60,9 +59,8 @@ def get_col_prob(t, cor_lst):
 
     idx = update.pose_to_costcor(cor_lst)
     costmap = update.costmap
-
     col_prob = costmap[t][idx[0][1]][idx[0][0]]
-
+    
     return col_prob
 
 
@@ -113,6 +111,7 @@ def get_cross_dist(cor_list):
 
 # the time from now to actual impact (col_prob == 1)
 def get_impact_time(cor_list):
+
     costmap = update.costmap
     cor_list_temp = cor_list.copy()
     time_impact = 0
@@ -139,6 +138,7 @@ def get_impact_time(cor_list):
         else:
 
             return 0
+
 
 ##########################################
 ##==== acceleration and deceleration====##
@@ -220,22 +220,20 @@ def main():
         finally:
 
             # update the costmap
-            #pdb.set_trace()
             update.update_costmap()
-            
             costmap = update.costmap
-
             pub_costmap.publish(data = costmap)
+            
 
             # NOTE different drive_mode ?  
             prob_thresh = 0.0  # smaller the thresh, more careful the driver is	    
-            # avoid by prediction (lh_dist in meters)
+            # avoid by prediction
             lh_dist = 0.5 * car_vel[0][1]**2 / brake + 0.5   # look ahead distance: able to stop with full break
 
 
             # get col_prob
             car_pose = update.car_pose
-            lh_pose = car_pose[0] + [0, lh_dist * t_res]  # this is claculated in every t_res
+            lh_pose = car_pose[0] + [0, lh_dist * t_res]   # this line is calculated in every t_res
             prob = get_col_prob(0, np.array([lh_pose]))
 
 
@@ -248,11 +246,11 @@ def main():
                     if col_prob_diff(0, np.array([lh_pose])) > 0:    # obstacle approaching: is it ok to accelerate?
                         print("Obstacle coming!")
 
-                        cross_dist = get_cross_dist(np.array([lh_pose]))  # in meters
+                        cross_dist = get_cross_dist(np.array([lh_pose]))
 
-                        time_impact = get_impact_time(np.array([lh_pose]))  # in seconds
+                        time_impact = get_impact_time(np.array([lh_pose]))
                     
-                        # the car will collide with obs if it keeping at this car_vel
+                        # whether car will collide with obs if it keeping at this car_vel
                         if cross_dist - car_vel[0][1] * time_impact > 0:
 
 
@@ -264,29 +262,24 @@ def main():
 
                             # accelerate OR decelerate
                             if root_t < time_impact:
-                                
                                 accelerate()     # accelerate
 
                             else :
-                               
-                                decelerate()    # decelerate
+                                decelerate()     # decelerate
 
                         else:
                             # keep moving can pass the obstacle
                             pass
 
                     elif col_prob_diff(0, np.array([lh_pose])) < 0:    # obstacle leaving
-
                         accelerate()     # accelerate
 
                     else:   # diff = 0 (prob = 1)
-                        
                         decelerate()   # not going to move a bit
 
                 else:   #NOTE: local planner!!! we don't have this yet
 
                     if prob == 1:
-                        
                         decelerate()     # decelerate
 
 
@@ -295,12 +288,10 @@ def main():
                 print("no obstacle ahead!!!!!!!!!!!!")
                 
                 if car_vel[0][1] + accele <= car_init_y_vel:
-
-                    accelerate()   # accelerate
+                    accelerate()
 
                 elif car_vel[0][1] - brake >= car_init_y_vel:
-                    
-                    decelerate()   # decelerate
+                    decelerate()
 
             twist = Twist()
             twist.linear.x = 0; twist.linear.y = car_vel[0][1]; twist.linear.z = 0

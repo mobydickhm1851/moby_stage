@@ -10,8 +10,16 @@ moby_stage Working Diary
 Unsolved Problems
 ---
 
-- __Costmap is not shown__ 
-    - file : car0_costmap_plot.py (car1_costmap_plot.py)
+### Look ahead dist setting now will cause __overlook__ at high speed
+    - file : car0 and car1_linear_nav.py
+    - line : 233
+    - detailed info : 
+        New look ahead dist should be used. 
+    - ToDo :
+        From a `point` to a `range`
+
+### __Costmap is not shown__ 
+    - file : car0 and car1_costmap_plot.py
     - line : 22
     - detailed info : 
         Originally the costmap was defined as 
@@ -33,3 +41,28 @@ Unsolved Problems
         
             scat.set_array(zz) (line 69) 
         The function `set_array()` change the __color setting of the plot__.
+
+
+### When the __size of the costmap is too large__ there will be delay for the velocity commands.
+    - file : car0 and car1_linear_nav.py, multi_robots_intersection.world and multi_robots_intersection.launch
+    - line : N/A
+    - detailed info :
+        As the size of the costmap exceed around 30 (actually it's relative to the velocity, kinda like reaction time is constant so the safe distance is relative to the approaching speed), the solabots will seem like neglecting the algorithm and drive directly into the other one. 
+        However, as the velocity and the costmap size is correctly defined, they behave normally(stop right at the edge of the pixels where the `risk` equals to `1`).
+        Also, when the t_lh or the costmap_size are too large, the claculation time will cause the delay of cmd_vels.
+    - factors :
+        - costmap_size
+        - t_lh (look ahead time)
+        - t_res (time resolution)
+        - map_res (map resolution)
+        - velocity
+    - ToDo : 
+        1. Reorganize the code and
+        2. Made the costmap 'local costmap' (around the host agent only), so it can still work in larger maps.   
+
+
+Useful Information
+---
+
+- When the module `costmap_module` is imported, a new _process_ is created. In this case there are 4 nodes calling the module : car0_nav, car1_nav, car0_costmap_plot and car1_costmap_plot. Each of them brings up a `update` process which is not related to eachother. So, for example, if I want to update the parameters get from launch file and update them to `update` in the module imported, the `init_map()` should be called on each node.
+

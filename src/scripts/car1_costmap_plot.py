@@ -52,15 +52,23 @@ def costmap_plot(arr):
     
     zz = arr.transpose().reshape(1,-1)[0]
 
-    w, h = figaspect(1.)
+    w, h = figaspect(.8)
     fig = plt.figure(figsize=(w,h))
-    scat = plt.scatter(x_plt, y_plt, c=zz, marker="s",edgecolors="none", s = 10, alpha = 0.5, cmap='Reds') 
+    scat = plt.scatter(x_plt, y_plt, c=zz, marker="s",edgecolors="none", s = 10, alpha = 0.5, cmap='Blues', vmin=0, vmax=1) 
 
-    scat_car_pose = plt.scatter(car_pose_update[0][0], car_pose_update[0][1], c='red', marker='o', s = 100, alpha = 1)
+    scat_car_pose = plt.scatter(car_pose_update[0][0], car_pose_update[0][1], c='red', marker='o', s = 30, alpha = 1, label='car1')
 
     # comma here is to prevent the arg been passed unpacked, instead of as an arg
     ani = animation.FuncAnimation(fig, update_plot, fargs=(scat, scat_car_pose,), interval = 10)
+
+    plt.title("car1's Costmap for Obsticles")
+    plt.legend(scatterpoints = 1, loc='lower left')
+    cbar = plt.colorbar(scat)
+    cbar.set_label('Risks')
     plt.show()
+
+
+
 
 def callback(raw_arr):
     global costmap

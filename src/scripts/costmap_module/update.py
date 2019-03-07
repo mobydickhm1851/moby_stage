@@ -198,19 +198,23 @@ def change_costmap_val( t, row_idx, col_idx, set_val):
 def cost_function(dist_to_obs, obs_vel):
     front_factor, rear_factor, obs_vel
     obs_vel = abs(obs_vel)
-  
-    if dist_to_obs >= 0:   # in front of the obstacle
-        val = -(front_factor / obs_vel) * dist_to_obs**2 + 1
 
-    else:    # behind the obstacle
-        val = -(rear_factor / obs_vel) * dist_to_obs**2 + 1
+    if obs_vel != 0:
+
+        if dist_to_obs >= 0:   # in front of the obstacle
+            val = -(front_factor / obs_vel) * dist_to_obs**2 + 1
     
-    if val < 0 :
+        else:    # behind the obstacle
+            val = -(rear_factor / obs_vel) * dist_to_obs**2 + 1
+        
+        if val < 0 :
+            return 0
+    
+        else:    # val should be between 0 and 1
+            return val
+    else:
+
         return 0
-
-    else:    # val should be between 0 and 1
-        return val
-
 
 
 # check if the index is within the border
@@ -309,8 +313,8 @@ def update_costmap():
     t_lh = get_t_ahead()
   
     #NOTE: restrict time dimension of costmap in 5 second
-    if t_lh > 50:
-        t_lh = 50
+    if t_lh > 30:
+        t_lh = 30
 
 
     reset_costmap(t_lh)
@@ -349,10 +353,12 @@ def update_costmap():
                     r_idx = arr_idx[obs_num][abs(xy-1)][xy-1]  # upper/front x
                     l_idx = arr_idx[obs_num][abs(xy-1)][-xy]   # lower/rear x
             
-
-                    # Velocity direction check, 1 if > 0 ; -1 if < 0 
-                    v_check = abs(obs_vel[obs_num][xy]) / obs_vel[obs_num][xy]
-
+                    
+                    if obs_vel[obs_num][xy] != 0:
+                        # Velocity direction check, 1 if > 0 ; -1 if < 0 
+                        v_check = abs(obs_vel[obs_num][xy]) / obs_vel[obs_num][xy]
+                    else:
+                        v_check = 0
 
                     # x-direction prediction costmap
                     if xy == 0:
