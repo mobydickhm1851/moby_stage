@@ -6,8 +6,8 @@
   <arg name="name0" default="car0" />
   <arg name="name1" default="car1" />
   <arg name="cmap_size_default" default="45" />
-  <arg name="car0_init_vel" default="1" />
-  <arg name="car1_init_vel" default="1" />
+  <arg name="car0_init_vel" default="1.5" />
+  <arg name="car1_init_vel" default="1.5" />
 
   <param name="/use_sim_time" value="true"/>
 

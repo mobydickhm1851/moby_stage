@@ -210,6 +210,8 @@ def main():
     pub_costmap = rospy.Publisher('/costmap0', numpy_nd_msg(Float32MultiArray), queue_size=5)
     # data of the "car" 
     pub_car_vel = rospy.Publisher('/car0/cmd_vel', Twist, queue_size=5)
+    # pub the state of the ego vehicle
+    pub_car_state = rospy.Publisher('/car0/state', numpy_nd_msg(Float32MultiArray), queue_size=5)
     
 # ROS Subscribers
     rospy.Subscriber('/car0/base_pose_ground_truth', Odometry, update.update_car_odom)
@@ -243,7 +245,7 @@ def main():
             ### NOTE different drive_mode ?  
             prob_thresh = 0.0  # smaller the thresh, more careful the driver is	    
             ### Avoid by prediction (lh_dist in meters)
-            lh_dist = 0.5 * car_vel[0][1]**2 / brake + 0.5   # look ahead distance: able to stop with full break
+            lh_dist = 0.5 * car_vel[0][1]**2 / brake + 1.0   # look ahead distance: able to stop with full break
 
 
             ### Get the col_prob
@@ -264,7 +266,7 @@ def main():
 
 
             prob = 0
-            unit_lh_pose = 0
+            unit_lh_pose = [0,0]
 
             for lh_p in lh_pose_range:
 
@@ -343,6 +345,19 @@ def main():
                     
                     decelerate()   # decelerate
 
+            ### Get car states
+            # [0]: min_lh_pose; [1]: max_lh_pose; [2]: final lh_pose
+            # [3]: prob at that final lh_pose; [4]: probability of stoppiong
+
+            car_state = np.zeros((8,), dtype=np.float32)
+            car_state[0] = min_lh_pose[0] 
+            car_state[1] = min_lh_pose[1] 
+            car_state[2] = max_lh_pose[0] 
+            car_state[3] = max_lh_pose[1] 
+            car_state[4] = unit_lh_pose[0] 
+            car_state[5] = unit_lh_pose[1] 
+            car_state[6] = prob  # it's risk actually 
+
 
 ###############################################################################
 ##====================== END of POS Algorithm ===============================##
@@ -356,6 +371,7 @@ def main():
             
             if True:  
                     pub_car_vel.publish(twist)
+                    pub_car_state.publish(data = car_state)
 
             else:
                 pass

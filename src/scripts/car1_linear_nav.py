@@ -8,18 +8,18 @@ import rospy
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import numpy as np
-# import modult for n-d array
+### import modult for n-d array
 from std_msgs.msg import Float32MultiArray
 from costmap_module.numpy_nd_msg import numpy_nd_msg
 from costmap_module import update 
 #import costmap.update_costmap 
 import time
-# debug
+### for debugging
 import pdb
 
 
 
-# global variables from "update.py" in costmap_module
+### global variables from "update.py" in costmap_module
 car_vel = np.zeros((1, 2))
 car_pose = update.car_pose
 map_size = update.map_size
@@ -27,13 +27,16 @@ map_res = update.map_res
 t_res = update.t_res
 
 
-
+#################################################################################
 # ================================ Navigation ================================= #
+#################################################################################
 
-# NOTE: not sure how to set the dimension of the matrix. For now, use the width of the intersection as the dimensions. (which is 80)
+### NOTE: not sure how to set the dimension of the matrix. For now, use the width of the intersection as the dimensions. (which is 80)
 
-# DEF=> col_prob_matrix stands for: (1, 80)array in y-direction (col_prob_matrix[1]) from the current car_pose of every unit "future costmaps" (col_prob_matrix[0])
+### DEF=> col_prob_matrix stands for: (1, 80)array in y-direction (col_prob_matrix[1]) from the current car_pose of every unit "future costmaps" (col_prob_matrix[0])
 
+
+### Some default settings
 col_prob_matrix = np.zeros((80, 80))
 
 
@@ -54,7 +57,6 @@ def update_prob_matrix():
 
 
 
-
 # Given a realworld coordinate return the collision probability
 def get_col_prob(t, cor_lst):
 
@@ -64,6 +66,7 @@ def get_col_prob(t, cor_lst):
     col_prob = costmap[t][idx[0][1]][idx[0][0]]
 
     return col_prob
+
 
 
 # calculate the differentiate of collision probability on a coordinate in time t_res
@@ -91,13 +94,12 @@ def get_cross_dist(cor_list):
         if dist2cross < int(np.ceil(map_size/map_res)):
 
             dist2cross += 1
-            # NOTE 1-D only!!!! ([0, map_res]), to +Y direction
+            ### NOTE 1-D only!!!! ([0, map_res]), to +Y direction
             cor_list_temp[0] = cor_list_temp[0] + [0, map_res]
             
-            # no obstacle ahead or obstacle is leaving
-            # NOTE: and one more or : if obstacle is approaching but we can pass it too
+            ### no obstacle ahead or obstacle is leaving
+            ### NOTE: and one more or : if obstacle is approaching but we can pass it too
             if get_col_prob(0, cor_list_temp) == 0 or col_prob_diff(0, cor_list_temp) < 0:
-
 
                 notfindit = False
 
@@ -111,44 +113,49 @@ def get_cross_dist(cor_list):
             return -1
 
 
+
 # the time from now to actual impact (col_prob == 1)
 def get_impact_time(cor_list):
+
     costmap = update.costmap
     cor_list_temp = cor_list.copy()
     time_impact = 0
     notfindit = True
 
     while notfindit:
-        
+
         if time_impact + 1 < costmap.shape[0]:
 
             time_impact += 1
 
         # NOTE 1-D only!!!! horizontal search only, search direction should be along vel-vector
-
             if get_col_prob(time_impact, cor_list_temp) == 1:
-
                 notfindit = False
 
                 return time_impact * t_res 
-            
-            else:
 
+            else:
                 pass
 
         else:
-
             return 0
 
-##########################################
-##==== acceleration and deceleration====##
-##########################################
 
-# max acceleration (m/s)
+
+#################################################################################
+##===================== cmd_vel control setting ===============================##
+#################################################################################
+
+### Some default settings
+
 accele = 0.075 #(0.075 m/s^2)
 brake = accele*1.86
 max_vel = 5.0
 min_vel = 0.0 #(no reverse)
+
+
+
+### Functions
 
 def decelerate():
     accele, min_vel
@@ -172,8 +179,10 @@ def accelerate():
         car_vel[0][1] = max_vel
 
 
-# ============================================================================ #
-# ============================================================================ #
+#################################################################################
+##====================== END of cmd_vel control ===============================##
+#################################################################################
+
 
 
 
@@ -201,6 +210,8 @@ def main():
     pub_costmap = rospy.Publisher('/costmap1', numpy_nd_msg(Float32MultiArray), queue_size=5)
     # data of the "car" 
     pub_car_vel = rospy.Publisher('/car1/cmd_vel', Twist, queue_size=5)
+    # pub the state of the ego vehicle
+    pub_car_state = rospy.Publisher('/car1/state', numpy_nd_msg(Float32MultiArray), queue_size=5)
     
 # ROS Subscribers
     rospy.Subscriber('/car1/base_pose_ground_truth', Odometry, update.update_car_odom)
@@ -209,7 +220,7 @@ def main():
         rospy.Subscriber('/{0}/base_pose_ground_truth'.format(obs_list[i]), Odometry,update.update_obs_odom,(i))
 
 
-    rate = rospy.Rate(1/t_res) # default is 100
+    rate = rospy.Rate(100) # default is 100
 
     
     while not rospy.is_shutdown():
@@ -218,8 +229,12 @@ def main():
             pass
 
         finally:
+            
+#################################################################################
+##====================== BEGIN of POS Algorithm ===============================##
+#################################################################################
 
-            # update the costmap
+            ### update the costmap
             #pdb.set_trace()
             update.update_costmap()
             
@@ -227,42 +242,70 @@ def main():
 
             pub_costmap.publish(data = costmap)
 
-            # NOTE different drive_mode ?  
+            ### NOTE different drive_mode ?  
             prob_thresh = 0.0  # smaller the thresh, more careful the driver is	    
-            # avoid by prediction (lh_dist in meters)
+            ### Avoid by prediction (lh_dist in meters)
             lh_dist = 0.5 * car_vel[0][1]**2 / brake + 0.5   # look ahead distance: able to stop with full break
 
 
-            # get col_prob
+            ### Get the col_prob
             car_pose = update.car_pose
             lh_pose = car_pose[0] + [0, lh_dist * t_res]  # this is claculated in every t_res
-            prob = get_col_prob(0, np.array([lh_pose]))
+
+            ### Expand the lh_pose from a point to a range (from car to lh_pose), to find out the closest lh_pose to obstacle (on costmap => prob > 0 ) 
+            min_lh_pose = car_pose[0]
+            max_lh_pose = lh_pose
+            
+            lh_y_range = np.arange(min_lh_pose[1], max_lh_pose[1], map_res)
+            lh_pose_range = np.zeros((len(lh_y_range), 2))
+
+            for y_val in range(len(lh_y_range)):
+
+                lh_pose_range[y_val][0] = car_pose[0][0]
+                lh_pose_range[y_val][1] = lh_y_range[y_val]
 
 
-            # NOTE: Different drive mode??? now is energy-saving mode
-            # avoid obstacle while try to maintain the initial(target)speed
+            prob = 0
+            unit_lh_pose = [0,0]
+
+            for lh_p in lh_pose_range:
+
+                cand_prob = get_col_prob(0, np.array([lh_p]))
+
+                if cand_prob > 0:
+
+                    prob = cand_prob
+                    unit_lh_pose = lh_p
+
+                    break
+                
+                else:
+                    pass
+
+            ### NOTE: Different drive mode??? now is energy-saving mode
+            ### To avoid obstacle while try to maintain the initial(target)speed
             if prob != 0: 
 
                 if costmap.shape[0] > 1:    # prediction mode
                     
-                    if col_prob_diff(0, np.array([lh_pose])) > 0:    # obstacle approaching: is it ok to accelerate?
+                    if col_prob_diff(0, np.array([unit_lh_pose])) > 0:    # obstacle approaching: is it ok to accelerate?
                         print("Obstacle coming!")
 
-                        cross_dist = get_cross_dist(np.array([lh_pose]))  # in meters
+                        cross_dist = get_cross_dist(np.array([unit_lh_pose]))  # in meters
 
-                        time_impact = get_impact_time(np.array([lh_pose]))  # in seconds
+                        time_impact = get_impact_time(np.array([unit_lh_pose]))  # in seconds
                     
-                        # the car will collide with obs if it keeping at this car_vel
+                        ### The car will collide with obs if it keeping at this car_vel
                         if cross_dist - car_vel[0][1] * time_impact > 0:
 
 
-                            # NOTE: assume const. acceleration ! a = 1m/s (0.1m/t_res)
-                            # calculate the root of t: 1/2*a*t**2 + V_0*t - S = 0
+                            ### NOTE: assume const. acceleration ! a = 1m/s (0.1m/t_res)
+                            ### calculate the root of t: 1/2*a*t**2 + V_0*t - S = 0
                             roots = np.roots([1.0/2.0 * (accele), car_vel[0][1], - cross_dist])
-                            # only one positive root since S > 0
+                            ### Only one positive root since S > 0
                             root_t = np.amax(roots)
 
-                            # accelerate OR decelerate
+                            ### accelerate OR decelerate
                             if root_t < time_impact:
                                 
                                 accelerate()     # accelerate
@@ -272,10 +315,10 @@ def main():
                                 decelerate()    # decelerate
 
                         else:
-                            # keep moving can pass the obstacle
+                            ### Keep moving can pass the obstacle
                             pass
 
-                    elif col_prob_diff(0, np.array([lh_pose])) < 0:    # obstacle leaving
+                    elif col_prob_diff(0, np.array([unit_lh_pose])) < 0:    # obstacle leaving
 
                         accelerate()     # accelerate
 
@@ -283,7 +326,7 @@ def main():
                         
                         decelerate()   # not going to move a bit
 
-                else:   #NOTE: local planner!!! we don't have this yet
+                else:   ###NOTE: local planner!!! we don't have this yet
 
                     if prob == 1:
                         
@@ -302,6 +345,25 @@ def main():
                     
                     decelerate()   # decelerate
 
+            ### Get car states
+            # [0]: min_lh_pose; [1]: max_lh_pose; [2]: final lh_pose
+            # [3]: prob at that final lh_pose; [4]: probability of stoppiong
+
+            car_state = np.zeros((8,), dtype=np.float32)
+            car_state[0] = min_lh_pose[0] 
+            car_state[1] = min_lh_pose[1] 
+            car_state[2] = max_lh_pose[0] 
+            car_state[3] = max_lh_pose[1] 
+            car_state[4] = unit_lh_pose[0] 
+            car_state[5] = unit_lh_pose[1] 
+            car_state[6] = prob  # it's risk actually 
+
+
+###############################################################################
+##====================== END of POS Algorithm ===============================##
+###############################################################################
+
+
             twist = Twist()
             twist.linear.x = 0; twist.linear.y = car_vel[0][1]; twist.linear.z = 0
             twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = 0
@@ -309,6 +371,7 @@ def main():
             
             if True:  
                     pub_car_vel.publish(twist)
+                    pub_car_state.publish(data = car_state)
 
             else:
                 pass

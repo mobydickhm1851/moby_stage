@@ -22,14 +22,14 @@ floorplan
 solabot
 (
 	name "solabot_0"
-	pose [0 -8 0 0 ]
+	pose [0 -16 0 0 ]
 	color "blue"
 )
 
 solabot
 (
 	name "solabot_1"
-	pose [-8 0 0 -90 ]
+	pose [-16 0 0 -90 ]
 	color "red"
 )
 

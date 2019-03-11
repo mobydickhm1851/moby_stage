@@ -313,8 +313,8 @@ def update_costmap():
     t_lh = get_t_ahead()
   
     #NOTE: restrict time dimension of costmap in 5 second
-    if t_lh > 30:
-        t_lh = 30
+    if t_lh > 20:
+        t_lh = 20
 
 
     reset_costmap(t_lh)

@@ -7,16 +7,19 @@ moby_stage Working Diary
 
 [github_moby_stage]:https://github.com/mobydickhm1851/moby_stage
 
+Useful Information
+---
+
+- When adding obstacles (more than one) to the simulation, here are what needed to be changed:
+    1. obs_list 
+    2. published topic name (in nav.py) and subscribed topic name (in plot.py)
+
+
+- When the module `costmap_module` is imported, a new _process_ is created. In this case there are 4 nodes calling the module : car0_nav, car1_nav, car0_costmap_plot and car1_costmap_plot. Each of them brings up a `update` process which is not related to eachother. So, for example, if I want to update the parameters get from launch file and update them to `update` in the module imported, the `init_map()` should be called on each node.
+
 Unsolved Problems
 ---
 
-### Look ahead dist setting now will cause __overlook__ at high speed
-    - file : car0 and car1_linear_nav.py
-    - line : 233
-    - detailed info : 
-        New look ahead dist should be used. 
-    - ToDo :
-        From a `point` to a `range`
 
 ### __Costmap is not shown__ 
     - file : car0 and car1_costmap_plot.py
@@ -61,13 +64,15 @@ Unsolved Problems
         2. Made the costmap 'local costmap' (around the host agent only), so it can still work in larger maps.   
 
 
-Useful Information
+Solved Problems
 ---
+### Look ahead dist setting now will cause __overlook__ at high speed
+    - file : car0 and car1_linear_nav.py
+    - line : 233
+    - detailed info : 
+        New look ahead dist should be used. 
+    - Done :
+        From a `point` to a `range`
 
-- When adding obstacles (more than one) to the simulation, here are what needed to be changed:
-    1. obs_list 
-    2. published topic name (in nav.py) and subscribed topic name (in plot.py)
 
-
-- When the module `costmap_module` is imported, a new _process_ is created. In this case there are 4 nodes calling the module : car0_nav, car1_nav, car0_costmap_plot and car1_costmap_plot. Each of them brings up a `update` process which is not related to eachother. So, for example, if I want to update the parameters get from launch file and update them to `update` in the module imported, the `init_map()` should be called on each node.
 
