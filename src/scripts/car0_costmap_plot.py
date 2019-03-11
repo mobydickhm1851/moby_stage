@@ -118,12 +118,12 @@ def plot_update(i, scat, scat_car_pose):
     text_range = "Lookahead range: [{0:.2f},{1:.2f}] - [{2:.2f},{3:.2f}]".format(car_state[0], car_state[1], car_state[2], car_state[3])
     text_final_pose = "Final lookahead pose: [{0:.2f},{1:.2f}]".format(car_state[4], car_state[5])
     text_risk = "Risk at the pose : {0:.2f}".format(car_state[6])
-    text_prob = "Probability of stopping : {0:.2f}".format(car_state[7])
+    text_prob = "Car1's probability of stopping : {0:.2f}".format(car_state[7])
 
     plt.text(0.05, 0.20, text_range, va='center')
     plt.text(0.05, 0.40, text_final_pose, va='center')
     plt.text(0.05, 0.60, text_risk, va='center')
-    plt.text(0.05, 0.80, text_prob, va='center')
+    plt.text(0.05, 0.80, text_prob, va='center', fontsize = 14)
 
     #---------------------------------#
     #-- Plotting titles and legends --#

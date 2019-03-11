@@ -12,6 +12,7 @@ import numpy as np
 from std_msgs.msg import Float32MultiArray
 from .numpy_nd_msg import numpy_nd_msg
 import time
+from scipy.stats import norm
 
 
 
@@ -105,7 +106,7 @@ def update_car_odom(msg):
     
 
 
-
+# distance between obs and car
 def get_dists():
     obs_pose, car_pose
 
@@ -431,4 +432,86 @@ def update_costmap():
 
 
 # ================================================================================================ #
+
+#--- Parameters ---#
+
+alpha = 1
+R_min = 5    # meter
+tau = 0.6    # s
+a_dec = 6    # m/s^2
+slope = 0.65   # y = 0.65x + 0.15
+    
+
+###-------------------------------###
+###---Time to Action Estimation---###
+###-------------------------------###
+
+def CDF(ttc):
+
+    #--- Get the estimated TTA ---#
+    
+    v_obs =np.sqrt( np.sum( np.power(obs_vel[0], 2)))
+    
+    R_i = v_obs**2 / (2 * a_dec)
+
+    TTA_est = (R_i + v_obs*tau + R_min ) / v_obs
+
+    TTA_act = TTA_est / slope   # mean of the PDF
+
+    std = TTA_act * 0.375/2   # standard deviation of the PDF
+
+    cdf = norm(TTA_act, std).cdf(ttc)
+    
+    return cdf
+
+
+###----------------------------------- ###
+###------Probability of Stopping------ ###
+###----------------------------------- ###
+
+time_p = 0
+TTC_p = 0
+
+def POS():
+    global time_p, TTC_p
+    
+
+    #--- Variables ---#
+    # TODO: this is a quick solve, should become distance
+    d_node =np.sqrt( np.sum( np.power( np.subtract( obs_pose[0],[0,0]), 2)))
+    v_obs =np.sqrt( np.sum( np.power(obs_vel[0], 2)))
+    
+    TTC = d_node / v_obs
+
+    TTC_dif = (TTC - TTC_p) / (time.time() - time_p)
+
+    #--- Reset time and TTC ---#
+    TTC_p = TTC
+    time_p = time.time()
+
+    #--- gamma ---#
+    if (TTC_dif + 1) < 0:
+        
+        gamma = 0
+
+    else:
+        gamma = (TTC_dif + 1) * alpha
+
+    
+    #--- Probability of Stopping ---#
+    cdf_0 = CDF(TTC)
+    judge_p_stop = (1 - cdf_0) * gamma
+
+    if judge_p_stop > 1 :
+
+        p_stop = 1
+
+    else:
+        p_stop = judge_p_stop
+
+
+    return p_stop
+
+
+
 
