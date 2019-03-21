@@ -282,6 +282,21 @@ def main():
                 else:
                     pass
 
+            #--- slow down when approaching crossroad ---#
+            
+            obs_pose = update.obs_pose
+            obs_vel = update.obs_vel
+
+            d_node =np.sqrt( np.sum( np.power( np.subtract( obs_pose[0],[0,0]), 2)))
+            v_obs =np.sqrt( np.sum( np.power(obs_vel[0], 2)))
+            
+            if d_node < 5 and v_obs > 1:
+                
+                decelerate()
+
+
+
+
             ### NOTE: Different drive mode??? now is energy-saving mode
             ### To avoid obstacle while try to maintain the initial(target)speed
             if prob != 0: 

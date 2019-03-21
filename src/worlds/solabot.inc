@@ -113,11 +113,20 @@ define solabot position
 	  )
 
 	  #positional things
-	  drive "omni"
+	  drive "car"
+      # only used if drive is set to "car"
+      wheelbase 1.0
+
+      # localization "gps"
 	  localization "odom"
-	  ranger_return 1.0
-     	  update_interval 100
-          velocity_bounds [-1 1 -5 5 -1 1 -90 90 ]
+      # odometry error model parameters, 
+      # only used if localization is set to "odom"
+      # odom_error [0.03 0.03 0.00 0.05]
+	  
+      ranger_return 1.0
+      update_interval 100
+      velocity_bounds [-1 1 -5 5 -1 1 -90 90 ]
+      # acceleration_bounds [-1 1 -1 1 -1 1 -90 90]
 
 	  #sensors attached to solabot
 #	   solabot_sonars( ) 

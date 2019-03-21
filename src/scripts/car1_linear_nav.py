@@ -306,32 +306,39 @@ def main():
                     if col_prob_diff(0, np.array([unit_lh_pose])) > 0:    # obstacle approaching: is it ok to accelerate?
                         print("Obstacle coming!")
 
-                        cross_dist = get_cross_dist(np.array([unit_lh_pose]))  # in meters
+                        pos = update.POS()
+                        if pos > 0.8:
 
-                        time_impact = get_impact_time(np.array([unit_lh_pose]))  # in seconds
-                    
-                        ### The car will collide with obs if it keeping at this car_vel
-                        if cross_dist - car_vel[0][1] * time_impact > 0:
-
-
-                            ### NOTE: assume const. acceleration ! a = 1m/s (0.1m/t_res)
-                            ### calculate the root of t: 1/2*a*t**2 + V_0*t - S = 0
-                            roots = np.roots([1.0/2.0 * (accele), car_vel[0][1], - cross_dist])
-                            ### Only one positive root since S > 0
-                            root_t = np.amax(roots)
-
-                            ### accelerate OR decelerate
-                            if root_t < time_impact:
-                                
-                                accelerate()     # accelerate
-
-                            else :
-                               
-                                decelerate()    # decelerate
+                            accelerate()
 
                         else:
-                            ### Keep moving can pass the obstacle
-                            pass
+
+                            cross_dist = get_cross_dist(np.array([unit_lh_pose]))  # in meters
+
+                            time_impact = get_impact_time(np.array([unit_lh_pose]))  # in seconds
+                        
+                            ### The car will collide with obs if it keeping at this car_vel
+                            if cross_dist - car_vel[0][1] * time_impact > 0:
+
+
+                                ### NOTE: assume const. acceleration ! a = 1m/s (0.1m/t_res)
+                                ### calculate the root of t: 1/2*a*t**2 + V_0*t - S = 0
+                                roots = np.roots([1.0/2.0 * (accele), car_vel[0][1], - cross_dist])
+                                ### Only one positive root since S > 0
+                                root_t = np.amax(roots)
+
+                                ### accelerate OR decelerate
+                                if root_t < time_impact:
+                                    
+                                    accelerate()     # accelerate
+
+                                else :
+                                   
+                                    decelerate()    # decelerate
+
+                            else:
+                                ### Keep moving can pass the obstacle
+                                pass
 
                     elif col_prob_diff(0, np.array([unit_lh_pose])) < 0:    # obstacle leaving
 

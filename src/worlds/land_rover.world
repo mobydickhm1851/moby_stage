@@ -1,0 +1,34 @@
+include "map.inc"
+include "solabot.inc"
+include "origin.inc"
+
+size [50 50]
+
+# configure the GUI window
+window
+(
+	size [700.00 700.00]
+	scale 50
+)
+
+# load and environment bitmap
+floorplan
+(
+	bitmap "bitmaps/intersection.png"
+	size [50 50 0.5]
+)
+
+
+solabot
+(
+	name "the solabot"
+	pose [0 -6 0 0 ]
+	color "blue"
+)
+
+#origin
+#(
+#	name "the origin"
+#	pose [0 0 0 0 ]
+#	color "green"
+#)

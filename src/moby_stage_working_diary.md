@@ -17,6 +17,7 @@ Useful Information
 
 - When the module `costmap_module` is imported, a new _process_ is created. In this case there are 4 nodes calling the module : car0_nav, car1_nav, car0_costmap_plot and car1_costmap_plot. Each of them brings up a `update` process which is not related to eachother. So, for example, if I want to update the parameters get from launch file and update them to `update` in the module imported, the `init_map()` should be called on each node.
 
+
 Unsolved Problems
 ---
 
@@ -74,5 +75,8 @@ Solved Problems
     - Done :
         From a `point` to a `range`
 
-
+### Joy only publish on update
+    - Problem describtion : Joy node only publish when update (axis or button values change)
+    - Done : 
+         In launch file, under the joy_node, change the parameter *autorepeat_rate* to none-zero (default is 0.0, which is disables). 
 
